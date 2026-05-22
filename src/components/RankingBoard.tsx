@@ -5,6 +5,7 @@ type RankingBoardProps = {
   loading: boolean;
   errorMessage: string | null;
   onRefresh: () => void;
+  onBackToLobby?: () => void;
 };
 
 export function RankingBoard({
@@ -12,14 +13,22 @@ export function RankingBoard({
   loading,
   errorMessage,
   onRefresh,
+  onBackToLobby,
 }: RankingBoardProps) {
   return (
     <section className="ranking-panel" aria-label="ランキング">
       <div className="ranking-header">
         <h2>ランキング</h2>
-        <button type="button" className="secondary-button" onClick={onRefresh}>
-          更新
-        </button>
+        <div className="ranking-actions">
+          <button type="button" className="secondary-button" onClick={onRefresh}>
+            更新
+          </button>
+          {onBackToLobby === undefined ? null : (
+            <button type="button" className="secondary-button" onClick={onBackToLobby}>
+              ロビーへ戻る
+            </button>
+          )}
+        </div>
       </div>
       {loading ? <p className="mode-note">読み込み中</p> : null}
       {errorMessage === null ? null : (

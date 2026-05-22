@@ -1,4 +1,3 @@
-import { BarcodeForm } from "./BarcodeForm";
 import type { RemoteBattleRole } from "../domain/remoteBattle";
 
 type RemoteBattleSetupProps = {
@@ -6,14 +5,9 @@ type RemoteBattleSetupProps = {
   role: RemoteBattleRole;
   displayName: string;
   opponentDisplayName: string;
-  barcode: string;
-  errorMessage: string | null;
   connectionLabel: string;
   statusText: string;
-  canSubmit: boolean;
   ready: boolean;
-  onBarcodeChange: (barcode: string) => void;
-  onSubmit: () => void;
   onBackToLobby: () => void;
 };
 
@@ -22,14 +16,9 @@ export function RemoteBattleSetup({
   role,
   displayName,
   opponentDisplayName,
-  barcode,
-  errorMessage,
   connectionLabel,
   statusText,
-  canSubmit,
   ready,
-  onBarcodeChange,
-  onSubmit,
   onBackToLobby,
 }: RemoteBattleSetupProps) {
   return (
@@ -51,16 +40,6 @@ export function RemoteBattleSetup({
         <strong>{connectionLabel}</strong>
         <p>{statusText}</p>
       </div>
-
-      <BarcodeForm
-        barcode={barcode}
-        errorMessage={errorMessage}
-        canSubmit={canSubmit && !ready}
-        onBarcodeChange={onBarcodeChange}
-        onSubmit={onSubmit}
-        submitLabel="キャラクター準備"
-        label="自分のバーコード"
-      />
       <p className="readiness-note">
         {ready ? "キャラクター準備完了" : "キャラクター未準備"}
       </p>

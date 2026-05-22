@@ -54,6 +54,31 @@ input {
   padding: 16px;
 }
 
+.title-panel {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  border: 1px solid #d2d8dc;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.title-panel h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.title-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.title-actions button {
+  flex: 1 1 160px;
+}
+
 .mode-selector {
   display: grid;
   gap: 8px;
@@ -115,6 +140,12 @@ input {
   gap: 12px;
 }
 
+.ranking-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .ranking-header h2 {
   margin: 0;
   font-size: 1rem;
@@ -146,6 +177,15 @@ input {
 .profile-panel {
   display: grid;
   gap: 12px;
+  min-width: 0;
+  margin-bottom: 12px;
+}
+
+.profile-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
   min-width: 0;
   margin-bottom: 12px;
 }
@@ -673,6 +713,7 @@ button:disabled {
   }
 
   .setup-panel,
+  .title-panel,
   .control-panel,
   .battle-log,
   .combatant-panel {
@@ -708,6 +749,14 @@ button:disabled {
   .ranking-header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .ranking-actions {
+    flex-direction: column;
+  }
+
+  .profile-strip {
+    grid-template-columns: 1fr;
   }
 
   .ranking-list {

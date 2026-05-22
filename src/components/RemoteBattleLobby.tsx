@@ -4,7 +4,8 @@ type RemoteBattleLobbyProps = {
   createdRoomId: string | null;
   joiningRoomId: string;
   canJoin: boolean;
-  canUseRemoteBattle: boolean;
+  canCreateRoom: boolean;
+  canJoinRoom: boolean;
   disabledMessage: string | null;
   errorMessage: string | null;
   onCreateRoom: () => void;
@@ -17,7 +18,8 @@ export function RemoteBattleLobby({
   createdRoomId,
   joiningRoomId,
   canJoin,
-  canUseRemoteBattle,
+  canCreateRoom,
+  canJoinRoom,
   disabledMessage,
   errorMessage,
   onCreateRoom,
@@ -28,7 +30,7 @@ export function RemoteBattleLobby({
   function handleJoinSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!canJoin || !canUseRemoteBattle) {
+    if (!canJoin || !canJoinRoom) {
       return;
     }
 
@@ -45,7 +47,7 @@ export function RemoteBattleLobby({
         {errorMessage === null ? null : (
           <p className="field-error">{errorMessage}</p>
         )}
-        <button type="button" onClick={onCreateRoom} disabled={!canUseRemoteBattle}>
+        <button type="button" onClick={onCreateRoom} disabled={!canCreateRoom}>
           部屋を作る
         </button>
         {createdRoomId === null ? null : (
@@ -68,7 +70,7 @@ export function RemoteBattleLobby({
               autoCapitalize="characters"
             />
           </label>
-          <button type="submit" disabled={!canJoin || !canUseRemoteBattle}>
+          <button type="submit" disabled={!canJoin || !canJoinRoom}>
             参加する
           </button>
         </form>
