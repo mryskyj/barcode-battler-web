@@ -190,6 +190,53 @@ rooms/{roomId}
 - 高解像度カメラや大きいCanvasが使えない端末では、カメラ制約とスキャンキャンバスサイズを段階的に下げて継続する
 - スキャナーのデバッグログは通常表示しない。開発時に `?scannerDebug=1` または `localStorage.setItem("barcodeScannerDebug", "1")` を指定した場合だけ、画面ログとコンソールログを出す
 
+### 読み取り結果バリデーション
+
+カメラ読み取りは誤検出が起きるため、ZXingの読み取り結果をそのまま入力欄へ反映しない。バーコードバトラーの実機が主に対象にしていたJAN/EAN/UPC系だけをPhase 4の採用対象にし、`Result.getText()` と `Result.getBarcodeFormat()` を受け取って受け入れ可否を判定する。
+
+- 検証処理はReactへ依存しない `src/domain/scannedBarcodeValidation.ts` に置く
+- `BarcodeScanner` / `useBarcodeScanner` は検証済みの文字列だけを `onDetected` に渡す
+- 検証に失敗した読み取り結果はユーザー向けエラーにせず、デバッグログへ `scan-result-rejected` として残し、次フレームの読み取りを続ける
+- 手入力の `validateBarcodeInput` は既存どおり最小文字数と空文字チェックを担当し、カメラ読み取り固有の形式チェックとは分ける
+- ZXingの読み取り対象フォーマットもPhase 4では `EAN_8`、`EAN_13`、`UPC_A`、`UPC_E` に絞る
+- ISBNは `EAN_13` として読み取られる `978` / `979` 始まりの13桁として扱う
+
+#### 受け入れルール
+
+- `EAN_8`: 数字8桁、GS1チェックデジット一致
+- `EAN_13`: 数字13桁、GS1チェックデジット一致
+- `UPC_A`: 数字12桁、GS1チェックデジット一致
+- `UPC_E`: 数字6桁または8桁を候補として扱う。実装時はUPC-E展開規則を確認し、GTIN-12へ展開してチェックデジットを検証する
+- それ以外の形式: Phase 4では不採用。`CODE_39`、`CODE_93`、`CODABAR`、`CODE_128`、`ITF`、`RSS_14`、`RSS_EXPANDED` は読み取れても入力へ反映しない
+
+#### GS1チェックデジット
+
+GTIN-8、GTIN-12、GTIN-13はGS1のチェックデジット方式で検証する。右端のチェックデジットを除いた数字列に対して、右から交互に3、1の重みを掛け、合計を10の倍数へ切り上げた差分がチェックデジットと一致することを確認する。
+
+#### Phase 5以降の拡張候補
+
+バーコードバトラー再現よりも現代的な利便性を優先する場合、Phase 5以降で以下を追加検討する。
+
+- `CODE_39`: 大文字英字、数字、スペース、`.`、`-`、`+`、`$`、`/`、`%`
+- `CODE_93`: Code 39系の文字種と拡張ASCII表現
+- `CODABAR`: 数字、`-`、`$`、`:`、`/`、`.`、`+`、開始・終了文字 `A` / `B` / `C` / `D`
+- `CODE_128`: ASCII範囲。GS1-128として扱う場合はAI構造も確認する
+- `ITF`: ITF-14などの物流系GTIN
+- `RSS_14` / `RSS_EXPANDED`: GS1 DataBar系
+
+#### 参考仕様
+
+- GS1 General Specifications: GTIN-8 / GTIN-12 / GTIN-13 / GTIN-14、EAN/UPC、ITF-14、GS1 DataBar、チェックデジット
+- GS1 Check Digit Calculator: GS1キーのチェックデジット確認
+- GS1 US ITF-14: ITF-14はGTINを14桁形式でエンコードする
+- GS1 GS1-128 format: GS1-128はFNC1、AI、データ、シンボルチェック文字を含み、48データ文字を超えない
+- KEYENCE CODE 128: CODE 128は128個のASCII文字を表現できる
+- Cognex Code 39: Code 39は43文字の基本文字種を持つ
+- Dynamsoft Code 93: Code 93はCode 39より高密度で47文字を扱う
+- STRICH Codabar: Codabarは数字、6つの記号、A-Dの開始・終了文字を扱う
+- Barcode Battler II signal notes: EAN-13 / EAN-8 の出力形式
+- 地域別のBarcode Battler II整理情報: 日本版・欧州版はEAN、北米版はUPC
+
 ### カメラ実装の分割
 
 - `BarcodeScanner.tsx` はカメラUIの描画を担当する
@@ -201,12 +248,14 @@ rooms/{roomId}
 - Canvasフレーム作成と座標変換は `barcodeScannerFrame.ts` に置く
 - スキャナーのデバッグ表示可否と詳細整形は `barcodeScannerDebug.ts` に置く
 - エラー分類は `barcodeScannerErrors.ts` に置く
+- カメラ読み取り結果の形式別検証は `scannedBarcodeValidation.ts` に置く
 
 ## Phase 5以降
 
 Phase 5以降は、カメラ読み取りとは独立した追加機能として扱う。
 
 - QRコード参加
+- EAN/UPC以外のバーコード形式への拡張対応
 - ランキング
 - アカウント機能
 
