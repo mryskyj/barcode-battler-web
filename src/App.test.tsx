@@ -168,6 +168,18 @@ describe("App", () => {
     expect(screen.getByRole("region", { name: "部屋を作る" })).toBeInTheDocument();
   });
 
+  it("keeps remote setup controls available for compact layouts", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("radio", { name: "通信対戦" }));
+    await user.click(screen.getByRole("button", { name: "部屋を作る" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("接続準備中");
+    expect(screen.getByRole("button", { name: "キャラクター準備" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "退出して戻る" })).toBeEnabled();
+  });
+
   it("normalizes remote room ids before joining", async () => {
     const user = userEvent.setup();
     render(<App />);

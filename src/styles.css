@@ -104,16 +104,19 @@ input {
 .remote-setup {
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 
 .room-summary {
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .connection-status {
   display: grid;
   gap: 4px;
+  min-width: 0;
   border-radius: 6px;
   background: #f3f6f6;
   padding: 10px 12px;
@@ -146,6 +149,7 @@ input {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
   margin: 0;
   border-radius: 6px;
   background: #f3f6f6;
@@ -158,8 +162,10 @@ input {
 }
 
 .room-id-display strong {
+  min-width: 0;
   font-size: 1.35rem;
   letter-spacing: 0.08em;
+  overflow-wrap: anywhere;
 }
 
 .readiness-note {
@@ -405,6 +411,25 @@ button:disabled {
 
   .command-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .remote-lobby,
+  .remote-setup {
+    gap: 10px;
+  }
+
+  .remote-lobby-panel {
+    gap: 10px;
+  }
+
+  .room-id-display {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .room-id-display strong {
+    font-size: 1.2rem;
   }
 
   .result-actions {
