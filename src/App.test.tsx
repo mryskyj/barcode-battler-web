@@ -25,7 +25,7 @@ describe("App", () => {
     render(<App />);
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Barcode Battler Web" }),
+      screen.getByRole("heading", { level: 1, name: "バーコードバトラー" }),
     ).toBeInTheDocument();
   });
 
@@ -33,6 +33,9 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getByRole("region", { name: "タイトル" })).toBeInTheDocument();
+    expect(screen.getByText("スキャンしてたたかえ！")).toBeInTheDocument();
+    expect(screen.getByText("START")).toBeInTheDocument();
+    expect(screen.getByText("NO PLAYER DATA")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "はじめる" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "ユーザー名入力" })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "部屋を作る" })).not.toBeInTheDocument();
@@ -50,6 +53,7 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getByRole("region", { name: "タイトル" })).toBeInTheDocument();
+    expect(screen.getByText("PLAYER")).toBeInTheDocument();
     expect(screen.getByText("Alice")).toBeInTheDocument();
   });
 

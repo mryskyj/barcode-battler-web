@@ -419,41 +419,18 @@ export function App({
 
   return (
     <main className="app-shell">
-      <header className="app-header">
-        <h1>Barcode Battler Web</h1>
-      </header>
+      {activeScreen === "title" ? null : (
+        <header className="app-header">
+          <h1>Barcode Battler Web</h1>
+        </header>
+      )}
 
       {activeScreen === "title" ? (
-        <section className="title-panel" aria-label="タイトル">
-          <h2>Barcode Battler Web</h2>
-          {playerProfile === null ? (
-            <p className="mode-note">ユーザー名を設定してください</p>
-          ) : (
-            <p className="room-id-display">
-              <span>ユーザー名</span>
-              <strong>{playerProfile.displayName}</strong>
-            </p>
-          )}
-          <div className="title-actions">
-            <button
-              type="button"
-              onClick={() =>
-                setScreen(playerProfile === null ? "profile" : "character")
-              }
-            >
-              はじめる
-            </button>
-            {playerProfile === null ? null : (
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => setScreen("profile")}
-              >
-                ユーザー名を変更
-              </button>
-            )}
-          </div>
-        </section>
+        <TitleScreen
+          profile={playerProfile}
+          onStart={() => setScreen(playerProfile === null ? "profile" : "character")}
+          onEditProfile={() => setScreen("profile")}
+        />
       ) : playerProfile === null || activeScreen === "profile" ? (
         <section className="setup-panel" aria-label="ユーザー名入力">
           <PlayerProfileForm
@@ -645,6 +622,69 @@ function RemoteBattleView({
       <BattleLog
         entries={room.battle.log.length === 0 ? ["通信対戦開始"] : room.battle.log}
       />
+    </div>
+  );
+}
+
+function TitleScreen({
+  profile,
+  onStart,
+  onEditProfile,
+}: {
+  profile: PlayerProfile | null;
+  onStart: () => void;
+  onEditProfile: () => void;
+}) {
+  return (
+    <section className="title-panel" aria-label="タイトル">
+      <TitleEmblem />
+
+      <div className="title-copy">
+        <span className="title-barcode-strip title-barcode-strip-a" aria-hidden="true" />
+        <span className="title-barcode-strip title-barcode-strip-b" aria-hidden="true" />
+        <span className="title-barcode-strip title-barcode-strip-c" aria-hidden="true" />
+        <span className="title-barcode-strip title-barcode-strip-d" aria-hidden="true" />
+        <p className="title-kicker">スキャンしてたたかえ！</p>
+        <h1>バーコードバトラー</h1>
+      </div>
+
+      {profile === null ? (
+        <p className="title-player-card">NO PLAYER DATA</p>
+      ) : (
+        <div className="title-player-card">
+          <span>PLAYER</span>
+          <strong>{profile.displayName}</strong>
+        </div>
+      )}
+
+      <div className="title-actions">
+        <button type="button" className="title-start-button" onClick={onStart} aria-label="はじめる">
+          START
+        </button>
+        {profile === null ? null : (
+          <button type="button" className="quiet-button" onClick={onEditProfile}>
+            ユーザー名を変更
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function TitleEmblem() {
+  return (
+    <div className="title-emblem" aria-hidden="true">
+      <div className="title-emblem-grid">
+        <span className="title-summon-ring" />
+        <span className="title-summon-ray" />
+        <div className="title-summon-card">
+          <span className="title-card-mark" />
+          <span className="title-card-barcode" />
+        </div>
+        <span className="title-spark title-spark-a" />
+        <span className="title-spark title-spark-b" />
+        <span className="title-spark title-spark-c" />
+      </div>
     </div>
   );
 }
