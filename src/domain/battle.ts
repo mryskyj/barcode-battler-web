@@ -10,7 +10,8 @@ export const DAMAGE_BALANCE = {
   defenseDivider: 2,
   chargeMultiplier: 1.6,
   specialMultiplier: 1.9,
-  guardMultiplier: 0.5,
+  guardMultiplier: 0.4,
+  specialGuardMultiplier: 0.25,
   minVariance: 0.85,
   varianceWidth: 0.3,
 } as const;
@@ -140,7 +141,11 @@ export function calculateDamage(
   const chargeMultiplier = actor.charged ? DAMAGE_BALANCE.chargeMultiplier : 1;
   const specialMultiplier =
     command === "special" ? DAMAGE_BALANCE.specialMultiplier : 1;
-  const guardMultiplier = target.guarding ? DAMAGE_BALANCE.guardMultiplier : 1;
+  const guardMultiplier = target.guarding
+    ? command === "special"
+      ? DAMAGE_BALANCE.specialGuardMultiplier
+      : DAMAGE_BALANCE.guardMultiplier
+    : 1;
   const variance =
     DAMAGE_BALANCE.minVariance + random() * DAMAGE_BALANCE.varianceWidth;
 

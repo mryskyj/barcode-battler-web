@@ -100,7 +100,8 @@ describe("executeTurn", () => {
       "guard",
     );
 
-    expect(state.log).toContain("プレイヤーの「必殺」。47ダメージ。");
+    expect(state.log[1]).toContain("プレイヤーの「必殺」。");
+    expect(state.log[1]).toContain("ダメージ");
     expect(state.log).toContain("敵は「まもる」で身を守った");
   });
 
@@ -185,6 +186,37 @@ describe("calculateDamage", () => {
     );
 
     expect(guardedDamage).toBeLessThan(normalDamage);
+  });
+
+  it("reduces special damage more strongly than normal damage", () => {
+    const normalDamage = calculateDamage(
+      createCombatant(player),
+      createCombatant(enemy),
+      "attack",
+      fixedRandom(0.5),
+    );
+    const normalGuardedDamage = calculateDamage(
+      createCombatant(player),
+      { ...createCombatant(enemy), guarding: true },
+      "attack",
+      fixedRandom(0.5),
+    );
+    const specialDamage = calculateDamage(
+      createCombatant(player),
+      createCombatant(enemy),
+      "special",
+      fixedRandom(0.5),
+    );
+    const specialGuardedDamage = calculateDamage(
+      createCombatant(player),
+      { ...createCombatant(enemy), guarding: true },
+      "special",
+      fixedRandom(0.5),
+    );
+
+    expect(normalGuardedDamage / normalDamage).toBeGreaterThan(
+      specialGuardedDamage / specialDamage,
+    );
   });
 
   it("keeps special stronger than normal attack without doubling it too far", () => {

@@ -29,6 +29,7 @@
 - 乱数は `RandomSource` として注入できる
 - UIからは `createBattle` と `executeTurn` を呼ぶ
 - CPUは現在MVPでは単純な決定的ルールで行動する
+- `guard` は通常攻撃を軽減し、`special` に対してはさらに強く軽減する
 
 ## UI設計
 
