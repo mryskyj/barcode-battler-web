@@ -19,17 +19,19 @@ export function BarcodeScanner({
 }: BarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<ScannerControls | null>(null);
+  const successCloseTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const onDetectedRef = useRef(onDetected);
   const onCloseRef = useRef(onClose);
   const cameraAvailable =
     typeof globalThis.navigator !== "undefined" &&
     globalThis.navigator.mediaDevices?.getUserMedia !== undefined;
-  const [status, setStatus] = useState<"loading" | "scanning" | "error">(
+  const [status, setStatus] = useState<"loading" | "scanning" | "success" | "error">(
     cameraAvailable ? "loading" : "error",
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(
     cameraAvailable ? null : CAMERA_UNAVAILABLE_MESSAGE,
   );
+  const [detectedBarcode, setDetectedBarcode] = useState<string | null>(null);
 
   useEffect(() => {
     onDetectedRef.current = onDetected;
@@ -66,8 +68,15 @@ export function BarcodeScanner({
             }
 
             scannerControls.stop();
-            onDetectedRef.current(barcode);
-            onCloseRef.current();
+            setDetectedBarcode(barcode);
+            setStatus("success");
+            if (successCloseTimeoutRef.current !== null) {
+              globalThis.clearTimeout(successCloseTimeoutRef.current);
+            }
+            successCloseTimeoutRef.current = globalThis.setTimeout(() => {
+              onDetectedRef.current(barcode);
+              onCloseRef.current();
+            }, 260);
           },
         );
 
@@ -91,6 +100,9 @@ export function BarcodeScanner({
     return () => {
       cancelled = true;
       controlsRef.current?.stop();
+      if (successCloseTimeoutRef.current !== null) {
+        globalThis.clearTimeout(successCloseTimeoutRef.current);
+      }
       controlsRef.current = null;
     };
   }, [cameraAvailable]);
@@ -108,6 +120,15 @@ export function BarcodeScanner({
         </button>
       </div>
       <div className="barcode-scanner-preview">
+        <div className="barcode-scanner-overlay" aria-hidden="true">
+          <div className="barcode-scanner-frame">
+            <span className="barcode-scanner-corner barcode-scanner-corner-top-left" />
+            <span className="barcode-scanner-corner barcode-scanner-corner-top-right" />
+            <span className="barcode-scanner-corner barcode-scanner-corner-bottom-left" />
+            <span className="barcode-scanner-corner barcode-scanner-corner-bottom-right" />
+            <span className="barcode-scanner-line" />
+          </div>
+        </div>
         <video
           ref={videoRef}
           autoPlay
@@ -116,12 +137,14 @@ export function BarcodeScanner({
           aria-label="バーコード読み取り映像"
         />
       </div>
-      <p className="mode-note" role="status">
+      <p className={`mode-note barcode-scanner-status barcode-scanner-status-${status}`} role="status" aria-live="polite">
         {status === "loading"
           ? "カメラを起動しています"
           : status === "scanning"
-            ? "バーコードを映してください"
-            : "カメラを起動できませんでした"}
+            ? "バーコードを枠に合わせてください"
+            : status === "success"
+              ? `読み取り成功: ${detectedBarcode ?? ""}`
+              : "カメラを起動できませんでした"}
       </p>
       {errorMessage === null ? null : (
         <p className="field-error">{errorMessage}</p>

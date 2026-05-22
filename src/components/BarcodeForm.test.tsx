@@ -88,6 +88,12 @@ describe("BarcodeForm", () => {
       );
     });
 
+    expect(screen.getByText("読み取り成功: 4901234567894")).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "カメラを閉じる" })).not.toBeInTheDocument();
+    });
+
     expect(screen.getByLabelText("バーコード")).toHaveValue("4901234567894");
     expect(screen.queryByRole("button", { name: "カメラを閉じる" })).not.toBeInTheDocument();
     expect(barcodeScannerMock.controls.stop).toHaveBeenCalled();

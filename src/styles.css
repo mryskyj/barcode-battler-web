@@ -243,9 +243,12 @@ input {
 }
 
 .barcode-scanner-preview {
+  position: relative;
   overflow: hidden;
   border-radius: 6px;
-  background: #000000;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.56)),
+    #000000;
   aspect-ratio: 4 / 3;
 }
 
@@ -254,6 +257,100 @@ input {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.barcode-scanner-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.barcode-scanner-frame {
+  position: relative;
+  width: min(72%, 320px);
+  aspect-ratio: 1.8 / 1;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-radius: 14px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.12);
+}
+
+.barcode-scanner-corner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-color: #d8ece6;
+  border-style: solid;
+}
+
+.barcode-scanner-corner-top-left {
+  top: -2px;
+  left: -2px;
+  border-width: 3px 0 0 3px;
+  border-top-left-radius: 12px;
+}
+
+.barcode-scanner-corner-top-right {
+  top: -2px;
+  right: -2px;
+  border-width: 3px 3px 0 0;
+  border-top-right-radius: 12px;
+}
+
+.barcode-scanner-corner-bottom-left {
+  bottom: -2px;
+  left: -2px;
+  border-width: 0 0 3px 3px;
+  border-bottom-left-radius: 12px;
+}
+
+.barcode-scanner-corner-bottom-right {
+  right: -2px;
+  bottom: -2px;
+  border-width: 0 3px 3px 0;
+  border-bottom-right-radius: 12px;
+}
+
+.barcode-scanner-line {
+  position: absolute;
+  inset: 12px 10px auto;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(216, 236, 230, 0),
+    rgba(216, 236, 230, 0.96),
+    rgba(216, 236, 230, 0)
+  );
+  animation: barcode-scan-line 1.6s ease-in-out infinite;
+}
+
+.barcode-scanner-status {
+  min-height: 1.4em;
+}
+
+.barcode-scanner-status-success {
+  color: #1d6a46;
+}
+
+.barcode-scanner-status-error {
+  color: #9b2626;
+}
+
+@keyframes barcode-scan-line {
+  0% {
+    transform: translateY(-8px);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateY(110px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-8px);
+    opacity: 0.2;
+  }
 }
 
 button {
