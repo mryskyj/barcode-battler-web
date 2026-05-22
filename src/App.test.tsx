@@ -34,6 +34,7 @@ describe("App", () => {
 
     expect(screen.getByRole("radio", { name: "CPU戦" })).toBeChecked();
     expect(screen.getByRole("radio", { name: "2人ローカル対戦" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "通信対戦" })).toBeInTheDocument();
   });
 
   it("shows local battle setup and keeps the start button locked until both players are ready", async () => {
@@ -116,6 +117,67 @@ describe("App", () => {
     const battleLog = screen.getByRole("region", { name: "戦闘ログ" });
     expect(within(battleLog).getByText("プレイヤー1はコマンドを選択した")).toBeInTheDocument();
     expect(within(battleLog).queryByText(/プレイヤー1.*必殺/)).not.toBeInTheDocument();
+  });
+
+  it("shows remote battle room creation and join controls", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("radio", { name: "通信対戦" }));
+
+    expect(screen.getByRole("region", { name: "部屋を作る" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "部屋に参加する" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "参加する" })).toBeDisabled();
+  });
+
+  it("shows remote character setup after creating a room", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("radio", { name: "通信対戦" }));
+    await user.click(screen.getByRole("button", { name: "部屋を作る" }));
+
+    expect(screen.getByText("ホストとして参加中")).toBeInTheDocument();
+    expect(screen.getByText("接続準備中")).toBeInTheDocument();
+    expect(screen.getByText("自分のキャラクター準備待ち")).toBeInTheDocument();
+    expect(screen.getByLabelText("自分のバーコード")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "キャラクター準備" })).toBeEnabled();
+  });
+
+  it("marks the remote character as ready", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("radio", { name: "通信対戦" }));
+    await user.click(screen.getByRole("button", { name: "部屋を作る" }));
+    await user.click(screen.getByRole("button", { name: "キャラクター準備" }));
+
+    expect(screen.getByText("キャラクター準備完了")).toBeInTheDocument();
+    expect(screen.getByText("ゲストの参加・準備待ち")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "キャラクター準備" })).toBeDisabled();
+  });
+
+  it("can leave remote setup and return to room selection", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("radio", { name: "通信対戦" }));
+    await user.click(screen.getByRole("button", { name: "部屋を作る" }));
+    await user.click(screen.getByRole("button", { name: "退出して戻る" }));
+
+    expect(screen.getByRole("region", { name: "部屋を作る" })).toBeInTheDocument();
+  });
+
+  it("normalizes remote room ids before joining", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("radio", { name: "通信対戦" }));
+    await user.type(screen.getByLabelText("部屋ID"), " ab12cd ");
+    await user.click(screen.getByRole("button", { name: "参加する" }));
+
+    expect(screen.getByText("AB12CD")).toBeInTheDocument();
+    expect(screen.getByText("ゲストとして参加中")).toBeInTheDocument();
   });
 
   it("keeps primary battle controls available for compact layouts", async () => {

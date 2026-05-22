@@ -1,1 +1,1 @@
-export type BattleMode = "cpu" | "local";
+export type BattleMode = "cpu" | "local" | "remote";

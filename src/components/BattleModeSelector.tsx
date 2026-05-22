@@ -29,6 +29,16 @@ export function BattleModeSelector({ value, onChange }: BattleModeSelectorProps)
         />
         <span>2人ローカル対戦</span>
       </label>
+      <label className="mode-option">
+        <input
+          type="radio"
+          name="battle-mode"
+          value="remote"
+          checked={value === "remote"}
+          onChange={() => onChange("remote")}
+        />
+        <span>通信対戦</span>
+      </label>
     </fieldset>
   );
 }

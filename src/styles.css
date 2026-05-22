@@ -96,6 +96,72 @@ input {
   gap: 12px;
 }
 
+.remote-lobby {
+  display: grid;
+  gap: 12px;
+}
+
+.remote-setup {
+  display: grid;
+  gap: 12px;
+}
+
+.room-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.connection-status {
+  display: grid;
+  gap: 4px;
+  border-radius: 6px;
+  background: #f3f6f6;
+  padding: 10px 12px;
+}
+
+.connection-status span,
+.connection-status p {
+  margin: 0;
+  color: #58706d;
+  font-weight: 700;
+}
+
+.connection-status strong {
+  color: #17443d;
+}
+
+.remote-lobby-panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.remote-lobby-panel h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.room-id-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  border-radius: 6px;
+  background: #f3f6f6;
+  padding: 10px 12px;
+}
+
+.room-id-display span {
+  color: #58706d;
+  font-weight: 700;
+}
+
+.room-id-display strong {
+  font-size: 1.35rem;
+  letter-spacing: 0.08em;
+}
+
 .readiness-note {
   margin: -4px 0 0;
   color: #58706d;
@@ -361,5 +427,9 @@ button:disabled {
 
   .command-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .remote-lobby {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

@@ -1,0 +1,38 @@
+# Firebase設定
+
+Phase 3の通信対戦は、GitHub Pagesで配信する静的WebアプリからFirebase Realtime Databaseへ接続して同期する。
+
+## Firebaseプロジェクト
+
+1. Firebase Consoleでプロジェクトを作成する
+2. Webアプリを追加する
+3. Realtime Databaseを作成する
+4. Firebase設定値を `.env.local` に保存する
+
+## 環境変数
+
+`.env.example` を参考に `.env.local` を作成する。
+
+```bash
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_DATABASE_URL=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_APP_ID=...
+```
+
+`.env.local` はコミットしない。
+
+## Realtime Databaseの使い方
+
+- 部屋データは `rooms/{roomId}` に保存する
+- Phase 3では認証なしで開始し、部屋IDを知っている2人だけが使う前提にする
+- クライアントコードからFirebase SDKを直接呼ばず、`src/network` のラッパー経由で読み書きする
+
+## ローカル確認
+
+```bash
+npm run dev
+```
+
+Firebase設定値が未設定の場合、通信対戦機能の初期化時にエラーにする。CPU戦と2人ローカル対戦はFirebaseなしで動作する。

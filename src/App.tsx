@@ -6,6 +6,8 @@ import { CommandButtons } from "./components/CommandButtons";
 import { CombatantPanel } from "./components/CombatantPanel";
 import { LocalBattleSetup } from "./components/LocalBattleSetup";
 import { LocalBattleView } from "./components/LocalBattleView";
+import { RemoteBattleLobby } from "./components/RemoteBattleLobby";
+import { RemoteBattleSetup } from "./components/RemoteBattleSetup";
 import {
   createBattle,
   executeTurn,
@@ -20,8 +22,19 @@ import {
   submitLocalBattleCommand,
   type LocalBattleState,
 } from "./domain/localBattle";
+import {
+  createRemoteRoomId,
+  isValidRemoteRoomId,
+  normalizeRemoteRoomId,
+} from "./domain/remoteRoomId";
+import type { RemoteBattleRole } from "./domain/remoteBattle";
 
 const DEFAULT_ENEMY_BARCODE = "4512345678906";
+
+type RemoteSession = {
+  roomId: string;
+  role: RemoteBattleRole;
+};
 
 export function App() {
   const [mode, setMode] = useState<BattleMode>("cpu");
@@ -32,9 +45,15 @@ export function App() {
   const [player2Ready, setPlayer2Ready] = useState(false);
   const [cpuBattle, setCpuBattle] = useState<BattleState | null>(null);
   const [localBattle, setLocalBattle] = useState<LocalBattleState | null>(null);
+  const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
+  const [joiningRoomId, setJoiningRoomId] = useState("");
+  const [remoteSession, setRemoteSession] = useState<RemoteSession | null>(null);
+  const [remoteBarcode, setRemoteBarcode] = useState("4901234567894");
+  const [remoteReady, setRemoteReady] = useState(false);
   const barcodeValidation = validateBarcodeInput(barcode);
   const player1BarcodeValidation = validateBarcodeInput(player1Barcode);
   const player2BarcodeValidation = validateBarcodeInput(player2Barcode);
+  const remoteBarcodeValidation = validateBarcodeInput(remoteBarcode);
   const enemy = useMemo(
     () => createCharacter(DEFAULT_ENEMY_BARCODE, "CPU"),
     [],
@@ -106,6 +125,47 @@ export function App() {
     setPlayer2Ready(false);
   }
 
+  function createRemoteRoom() {
+    const roomId = createRemoteRoomId();
+    setCreatedRoomId(roomId);
+    setRemoteSession({ roomId, role: "host" });
+    setRemoteReady(false);
+  }
+
+  function joinRemoteRoom() {
+    if (!isValidRemoteRoomId(joiningRoomId)) {
+      return;
+    }
+
+    const roomId = normalizeRemoteRoomId(joiningRoomId);
+    setJoiningRoomId(roomId);
+    setRemoteSession({ roomId, role: "guest" });
+    setRemoteReady(false);
+  }
+
+  function changeRemoteBarcode(nextBarcode: string) {
+    setRemoteBarcode(nextBarcode);
+    setRemoteReady(false);
+  }
+
+  function prepareRemoteCharacter() {
+    if (remoteSession === null || !remoteBarcodeValidation.isValid) {
+      return;
+    }
+
+    createCharacter(
+      remoteBarcodeValidation.normalizedBarcode,
+      remoteSession.role === "host" ? "ホスト" : "ゲスト",
+    );
+    setRemoteBarcode(remoteBarcodeValidation.normalizedBarcode);
+    setRemoteReady(true);
+  }
+
+  function backToRemoteLobby() {
+    setRemoteSession(null);
+    setRemoteReady(false);
+  }
+
   return (
     <main className="app-shell">
       <header className="app-header">
@@ -123,7 +183,7 @@ export function App() {
               onBarcodeChange={setBarcode}
               onSubmit={startBattle}
             />
-          ) : (
+          ) : mode === "local" ? (
             <LocalBattleSetup
               player1Barcode={player1Barcode}
               player1ErrorMessage={player1BarcodeValidation.message}
@@ -145,6 +205,31 @@ export function App() {
               }
               onStart={startLocalBattle}
             />
+          ) : (
+            <>
+              {remoteSession === null ? (
+                <RemoteBattleLobby
+                  createdRoomId={createdRoomId}
+                  joiningRoomId={joiningRoomId}
+                  canJoin={isValidRemoteRoomId(joiningRoomId)}
+                  onCreateRoom={createRemoteRoom}
+                  onJoiningRoomIdChange={setJoiningRoomId}
+                  onJoinRoom={joinRemoteRoom}
+                />
+              ) : (
+                <RemoteBattleSetup
+                  roomId={remoteSession.roomId}
+                  role={remoteSession.role}
+                  barcode={remoteBarcode}
+                  errorMessage={remoteBarcodeValidation.message}
+                  canSubmit={remoteBarcodeValidation.isValid}
+                  ready={remoteReady}
+                  onBarcodeChange={changeRemoteBarcode}
+                  onSubmit={prepareRemoteCharacter}
+                  onBackToLobby={backToRemoteLobby}
+                />
+              )}
+            </>
           )}
         </section>
       ) : cpuBattle !== null ? (
