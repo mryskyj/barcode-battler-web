@@ -96,6 +96,13 @@ input {
   gap: 12px;
 }
 
+.readiness-note {
+  margin: -4px 0 0;
+  color: #58706d;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 .barcode-form {
   display: grid;
   gap: 12px;
@@ -263,6 +270,19 @@ button:disabled {
 
 .result-panel strong {
   font-size: 1.5rem;
+}
+
+.turn-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.turn-panel strong {
+  font-size: 1.15rem;
+}
+
+.turn-panel .mode-note {
+  margin-bottom: 0;
 }
 
 .result-actions {

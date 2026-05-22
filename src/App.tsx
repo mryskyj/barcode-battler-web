@@ -5,6 +5,7 @@ import { BattleModeSelector } from "./components/BattleModeSelector";
 import { CommandButtons } from "./components/CommandButtons";
 import { CombatantPanel } from "./components/CombatantPanel";
 import { LocalBattleSetup } from "./components/LocalBattleSetup";
+import { LocalBattleView } from "./components/LocalBattleView";
 import {
   createBattle,
   executeTurn,
@@ -14,6 +15,11 @@ import {
 import type { BattleMode } from "./domain/battleMode";
 import { validateBarcodeInput } from "./domain/barcodeValidation";
 import { createCharacter } from "./domain/character";
+import {
+  createLocalBattle,
+  submitLocalBattleCommand,
+  type LocalBattleState,
+} from "./domain/localBattle";
 
 const DEFAULT_ENEMY_BARCODE = "4512345678906";
 
@@ -22,7 +28,10 @@ export function App() {
   const [barcode, setBarcode] = useState("4901234567894");
   const [player1Barcode, setPlayer1Barcode] = useState("4901234567894");
   const [player2Barcode, setPlayer2Barcode] = useState("4901234567895");
-  const [battle, setBattle] = useState<BattleState | null>(null);
+  const [player1Ready, setPlayer1Ready] = useState(false);
+  const [player2Ready, setPlayer2Ready] = useState(false);
+  const [cpuBattle, setCpuBattle] = useState<BattleState | null>(null);
+  const [localBattle, setLocalBattle] = useState<LocalBattleState | null>(null);
   const barcodeValidation = validateBarcodeInput(barcode);
   const player1BarcodeValidation = validateBarcodeInput(player1Barcode);
   const player2BarcodeValidation = validateBarcodeInput(player2Barcode);
@@ -41,17 +50,60 @@ export function App() {
       "プレイヤー",
     );
     setBarcode(barcodeValidation.normalizedBarcode);
-    setBattle(createBattle(player, enemy));
+    setLocalBattle(null);
+    setCpuBattle(createBattle(player, enemy));
+  }
+
+  function startLocalBattle() {
+    if (
+      mode !== "local" ||
+      !player1Ready ||
+      !player2Ready ||
+      !player1BarcodeValidation.isValid ||
+      !player2BarcodeValidation.isValid
+    ) {
+      return;
+    }
+
+    const player1 = createCharacter(
+      player1BarcodeValidation.normalizedBarcode,
+      "プレイヤー1",
+    );
+    const player2 = createCharacter(
+      player2BarcodeValidation.normalizedBarcode,
+      "プレイヤー2",
+    );
+    setPlayer1Barcode(player1BarcodeValidation.normalizedBarcode);
+    setPlayer2Barcode(player2BarcodeValidation.normalizedBarcode);
+    setCpuBattle(null);
+    setLocalBattle(createLocalBattle(player1, player2));
   }
 
   function handleCommand(command: BattleCommand) {
-    setBattle((current) =>
+    setCpuBattle((current) =>
       current === null ? current : executeTurn(current, command),
     );
   }
 
+  function handleLocalCommand(command: BattleCommand) {
+    setLocalBattle((current) =>
+      current === null ? current : submitLocalBattleCommand(current, command),
+    );
+  }
+
   function resetBattle() {
-    setBattle(null);
+    setCpuBattle(null);
+    setLocalBattle(null);
+  }
+
+  function changePlayer1Barcode(nextBarcode: string) {
+    setPlayer1Barcode(nextBarcode);
+    setPlayer1Ready(false);
+  }
+
+  function changePlayer2Barcode(nextBarcode: string) {
+    setPlayer2Barcode(nextBarcode);
+    setPlayer2Ready(false);
   }
 
   return (
@@ -60,7 +112,7 @@ export function App() {
         <h1>Barcode Battler Web</h1>
       </header>
 
-      {battle === null ? (
+      {cpuBattle === null && localBattle === null ? (
         <section className="setup-panel" aria-label="キャラクター生成">
           <BattleModeSelector value={mode} onChange={setMode} />
           {mode === "cpu" ? (
@@ -76,22 +128,39 @@ export function App() {
               player1Barcode={player1Barcode}
               player1ErrorMessage={player1BarcodeValidation.message}
               player1CanSubmit={player1BarcodeValidation.isValid}
+              player1Ready={player1Ready}
               player2Barcode={player2Barcode}
               player2ErrorMessage={player2BarcodeValidation.message}
               player2CanSubmit={player2BarcodeValidation.isValid}
-              onPlayer1BarcodeChange={setPlayer1Barcode}
-              onPlayer2BarcodeChange={setPlayer2Barcode}
+              player2Ready={player2Ready}
+              onPlayer1BarcodeChange={changePlayer1Barcode}
+              onPlayer2BarcodeChange={changePlayer2Barcode}
+              onPlayer1Submit={() => setPlayer1Ready(true)}
+              onPlayer2Submit={() => setPlayer2Ready(true)}
+              canStart={
+                player1Ready &&
+                player2Ready &&
+                player1BarcodeValidation.isValid &&
+                player2BarcodeValidation.isValid
+              }
+              onStart={startLocalBattle}
             />
           )}
         </section>
-      ) : (
+      ) : cpuBattle !== null ? (
         <BattleView
-          battle={battle}
+          battle={cpuBattle}
           onCommand={handleCommand}
           onRematch={startBattle}
           onBackToSetup={resetBattle}
         />
-      )}
+      ) : localBattle !== null ? (
+        <LocalBattleView
+          battle={localBattle}
+          onCommand={handleLocalCommand}
+          onBackToSetup={resetBattle}
+        />
+      ) : null}
     </main>
   );
 }

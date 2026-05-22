@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
@@ -36,7 +36,7 @@ describe("App", () => {
     expect(screen.getByRole("radio", { name: "2人ローカル対戦" })).toBeInTheDocument();
   });
 
-  it("disables CPU battle start in local mode", async () => {
+  it("shows local battle setup and keeps the start button locked until both players are ready", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -46,6 +46,7 @@ describe("App", () => {
     expect(screen.getByLabelText("プレイヤー2のバーコード")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "プレイヤー1を準備" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "プレイヤー2を準備" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "対戦を始める" })).toBeDisabled();
   });
 
   it("keeps local player barcode inputs independent", async () => {
@@ -60,6 +61,61 @@ describe("App", () => {
 
     expect(screen.getByLabelText("プレイヤー1のバーコード")).toHaveValue("1234");
     expect(screen.getByLabelText("プレイヤー2のバーコード")).toHaveValue("5678");
+  });
+
+  it("starts a local battle after both players are prepared", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("radio", { name: "2人ローカル対戦" }));
+    await user.click(screen.getByRole("button", { name: "プレイヤー1を準備" }));
+    await user.click(screen.getByRole("button", { name: "プレイヤー2を準備" }));
+    await user.click(screen.getByRole("button", { name: "対戦を始める" }));
+
+    expect(
+      screen.getByRole("region", { name: "プレイヤー1" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "プレイヤー2" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("プレイヤー1の選択")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "たたかう" })).toBeEnabled();
+  });
+
+  it("advances local battle turns after both players choose commands", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("radio", { name: "2人ローカル対戦" }));
+    await user.click(screen.getByRole("button", { name: "プレイヤー1を準備" }));
+    await user.click(screen.getByRole("button", { name: "プレイヤー2を準備" }));
+    await user.click(screen.getByRole("button", { name: "対戦を始める" }));
+
+    await user.click(screen.getByRole("button", { name: "たたかう" }));
+
+    expect(screen.getByText("プレイヤー2の選択")).toBeInTheDocument();
+    expect(screen.getByText("プレイヤー1は選択済み")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "ためる" }));
+
+    expect(screen.getByText("プレイヤー1の選択")).toBeInTheDocument();
+    expect(screen.getByText(/プレイヤー1の「たたかう」/)).toBeInTheDocument();
+    expect(screen.getByText(/プレイヤー2は「ためる」/)).toBeInTheDocument();
+  });
+
+  it("does not reveal the first local command before the second player selects", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("radio", { name: "2人ローカル対戦" }));
+    await user.click(screen.getByRole("button", { name: "プレイヤー1を準備" }));
+    await user.click(screen.getByRole("button", { name: "プレイヤー2を準備" }));
+    await user.click(screen.getByRole("button", { name: "対戦を始める" }));
+    await user.click(screen.getByRole("button", { name: "必殺" }));
+
+    const battleLog = screen.getByRole("region", { name: "戦闘ログ" });
+    expect(within(battleLog).getByText("プレイヤー1はコマンドを選択した")).toBeInTheDocument();
+    expect(within(battleLog).queryByText(/プレイヤー1.*必殺/)).not.toBeInTheDocument();
   });
 
   it("keeps primary battle controls available for compact layouts", async () => {
