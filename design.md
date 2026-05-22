@@ -59,6 +59,90 @@
 - 片方がコマンド選択済みでも、相手の選択前には選んだコマンド名をログや画面に出さない
 - 勝敗後は入力画面へ戻れるようにする
 
+## Phase 3: Firebase同期対戦
+
+GitHub Pagesで配信できる静的Webアプリのまま、別ブラウザ間で1対1の対戦を成立させる。Phase 3ではWebRTCを使わず、Firebase Realtime Databaseを部屋状態の同期先にする。
+
+### Firebase設計
+
+- Firebase Realtime Databaseを使う
+- Firebase設定値はViteの環境変数から読み込む
+- `src/network` にFirebase Realtime Databaseの読み書き処理を置く
+- UIからFirebase SDKを直接操作しない
+- 部屋データは `rooms/{roomId}` に置く
+- 部屋IDは推測しにくい短いランダム文字列にする
+- Phase 3では認証なしで開始し、Firebase Security Rulesで書き込み範囲を制限する
+
+### 部屋データ
+
+```txt
+rooms/{roomId}
+  status: "waiting" | "ready" | "playing" | "finished" | "closed"
+  host:
+    clientId
+    connected
+    character
+    ready
+    selectedCommand
+  guest:
+    clientId
+    connected
+    character
+    ready
+    selectedCommand
+  battle:
+    round
+    player1
+    player2
+    log
+    winner
+  updatedAt
+```
+
+### クライアント通信設計
+
+- 通信層は以下の操作を公開する
+  - 部屋作成
+  - 部屋参加
+  - 部屋状態購読
+  - キャラクター準備の書き込み
+  - コマンド選択の書き込み
+  - ラウンド結果の書き込み
+  - 部屋退出
+- Firebase上の値はアプリ内部型へ変換してからUIへ渡す
+- 不正な部屋状態や欠けたデータはパース時に弾く
+
+### 対戦同期
+
+- ホストを権威側にする
+- ホストはFirebase上で自分とゲストのコマンドが揃った時点でラウンドを解決する
+- ホストは解決後に `battle` と各プレイヤーの `selectedCommand` クリアを同時に書き込む
+- ゲストはコマンド送信後、Firebase上の `battle` 更新を待つ
+- 既存の `calculateDamage` とコマンド解決ルールを再利用し、通信固有の状態管理と分離する
+- Phase 3ではcommit/revealを実装しないため、完全な不正対策は非対象とする
+- 乱数はホスト側で発生させ、結果だけを同期する
+
+### UI設計
+
+- モード選択に「通信対戦」を追加する
+- 通信対戦では「部屋を作る」と「部屋に参加する」を選べる
+- ホスト画面には部屋IDを表示する
+- ゲスト画面には部屋ID入力欄を表示する
+- 接続後は各ブラウザで自分のバーコード入力とコマンド選択だけを表示する
+- 相手側はHP、ステータス、選択待ち/選択済み状態だけを表示し、コマンド内容は結果確定まで出さない
+- Firebase接続エラー、部屋なし、満員、相手退出の状態を表示する
+
+### 非対象
+
+- WebRTC
+- 自前のExpressサーバー
+- Socket.IO
+- QRコード参加
+- カメラ読み取り
+- 切断後の自動再接続
+- commit/revealによる後出し防止
+- サーバー権威型の完全な不正対策
+
 ## Phase 1.5: CPU戦MVP改善
 
 ### 入力バリデーション
