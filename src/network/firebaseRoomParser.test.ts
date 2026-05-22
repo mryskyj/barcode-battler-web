@@ -48,6 +48,32 @@ describe("parseFirebaseRoomDocument", () => {
     expect(parseFirebaseRoomDocument(validRoom)).toEqual(validRoom);
   });
 
+  it("treats missing nullable fields as null because Realtime Database omits null values", () => {
+    const parsed = parseFirebaseRoomDocument({
+      roomId: "ABCD12",
+      status: "waiting",
+      host: {
+        role: "host",
+        clientId: "host-client",
+        connected: true,
+        ready: false,
+      },
+      battle: {
+        round: 0,
+        log: [],
+      },
+      updatedAt: 1000,
+    });
+
+    expect(parsed.host.character).toBeNull();
+    expect(parsed.host.selectedCommand).toBeNull();
+    expect(parsed.guest).toBeNull();
+    expect(parsed.battle.host).toBeNull();
+    expect(parsed.battle.guest).toBeNull();
+    expect(parsed.battle.log).toEqual([]);
+    expect(parsed.battle.winner).toBeNull();
+  });
+
   it("rejects invalid room status", () => {
     expect(() =>
       parseFirebaseRoomDocument({

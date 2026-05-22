@@ -1,12 +1,13 @@
 import { BarcodeForm } from "./BarcodeForm";
 import type { RemoteBattleRole } from "../domain/remoteBattle";
-import { getRemoteSetupStatusText } from "../domain/remoteBattleStatusText";
 
 type RemoteBattleSetupProps = {
   roomId: string;
   role: RemoteBattleRole;
   barcode: string;
   errorMessage: string | null;
+  connectionLabel: string;
+  statusText: string;
   canSubmit: boolean;
   ready: boolean;
   onBarcodeChange: (barcode: string) => void;
@@ -19,14 +20,14 @@ export function RemoteBattleSetup({
   role,
   barcode,
   errorMessage,
+  connectionLabel,
+  statusText,
   canSubmit,
   ready,
   onBarcodeChange,
   onSubmit,
   onBackToLobby,
 }: RemoteBattleSetupProps) {
-  const statusText = getRemoteSetupStatusText(role, ready);
-
   return (
     <div className="remote-setup">
       <div className="room-summary">
@@ -40,7 +41,7 @@ export function RemoteBattleSetup({
       </div>
       <div className="connection-status" role="status">
         <span>接続状態</span>
-        <strong>接続準備中</strong>
+        <strong>{connectionLabel}</strong>
         <p>{statusText}</p>
       </div>
 

@@ -1,0 +1,187 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      ".read": false,
+      ".write": false,
+      "$roomId": {
+        ".read": "$roomId.matches(/^[A-Z0-9]{6}$/)",
+        ".write": "$roomId.matches(/^[A-Z0-9]{6}$/) && (!newData.exists() || (newData.hasChildren(['roomId', 'status', 'host', 'battle', 'updatedAt']) && newData.child('roomId').val() === $roomId && newData.child('updatedAt').isNumber()))",
+        "$other": {
+          ".validate": false
+        },
+        "roomId": {
+          ".validate": "newData.isString() && newData.val() === $roomId"
+        },
+        "status": {
+          ".validate": "newData.val() === 'waiting' || newData.val() === 'ready' || newData.val() === 'playing' || newData.val() === 'finished' || newData.val() === 'closed'"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "host": {
+          ".validate": "newData.hasChildren(['role', 'clientId', 'connected', 'ready'])",
+          "$other": {
+            ".validate": false
+          },
+          "role": {
+            ".validate": "newData.val() === 'host'"
+          },
+          "clientId": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+          },
+          "connected": {
+            ".validate": "newData.isBoolean()"
+          },
+          "ready": {
+            ".validate": "newData.isBoolean()"
+          },
+          "selectedCommand": {
+            ".validate": "newData.val() === 'attack' || newData.val() === 'charge' || newData.val() === 'guard' || newData.val() === 'special'"
+          },
+          "character": {
+            ".validate": "newData.hasChildren(['id', 'name', 'barcode', 'stats'])",
+            "$other": {
+              ".validate": false
+            },
+            "id": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
+            },
+            "barcode": {
+              ".validate": "newData.isString() && newData.val().length >= 4 && newData.val().length <= 80"
+            },
+            "stats": {
+              ".validate": "newData.hasChildren(['hp', 'power', 'defense', 'speed'])",
+              "$other": {
+                ".validate": false
+              },
+              "hp": {
+                ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999"
+              },
+              "power": {
+                ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999"
+              },
+              "defense": {
+                ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999"
+              },
+              "speed": {
+                ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999"
+              }
+            }
+          }
+        },
+        "guest": {
+          ".validate": "newData.hasChildren(['role', 'clientId', 'connected', 'ready'])",
+          "$other": {
+            ".validate": false
+          },
+          "role": {
+            ".validate": "newData.val() === 'guest'"
+          },
+          "clientId": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+          },
+          "connected": {
+            ".validate": "newData.isBoolean()"
+          },
+          "ready": {
+            ".validate": "newData.isBoolean()"
+          },
+          "selectedCommand": {
+            ".validate": "newData.val() === 'attack' || newData.val() === 'charge' || newData.val() === 'guard' || newData.val() === 'special'"
+          },
+          "character": {
+            ".validate": "newData.hasChildren(['id', 'name', 'barcode', 'stats'])",
+            "$other": {
+              ".validate": false
+            },
+            "id": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
+            },
+            "barcode": {
+              ".validate": "newData.isString() && newData.val().length >= 4 && newData.val().length <= 80"
+            },
+            "stats": {
+              ".validate": "newData.hasChildren(['hp', 'power', 'defense', 'speed'])",
+              "$other": {
+                ".validate": false
+              },
+              "hp": {
+                ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999"
+              },
+              "power": {
+                ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999"
+              },
+              "defense": {
+                ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999"
+              },
+              "speed": {
+                ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999"
+              }
+            }
+          }
+        },
+        "battle": {
+          ".validate": "newData.hasChildren(['round'])",
+          "$other": {
+            ".validate": false
+          },
+          "round": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 999"
+          },
+          "winner": {
+            ".validate": "newData.val() === 'host' || newData.val() === 'guest' || newData.val() === 'draw'"
+          },
+          "log": {
+            "$entry": {
+              ".validate": "newData.isString() && newData.val().length <= 160"
+            }
+          },
+          "host": {
+            ".validate": "newData.hasChildren(['character', 'currentHp', 'charged', 'guarding'])",
+            "$other": {
+              ".validate": false
+            },
+            "character": {
+              ".validate": "newData.hasChildren(['id', 'name', 'barcode', 'stats'])"
+            },
+            "currentHp": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 999"
+            },
+            "charged": {
+              ".validate": "newData.isBoolean()"
+            },
+            "guarding": {
+              ".validate": "newData.isBoolean()"
+            }
+          },
+          "guest": {
+            ".validate": "newData.hasChildren(['character', 'currentHp', 'charged', 'guarding'])",
+            "$other": {
+              ".validate": false
+            },
+            "character": {
+              ".validate": "newData.hasChildren(['id', 'name', 'barcode', 'stats'])"
+            },
+            "currentHp": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 999"
+            },
+            "charged": {
+              ".validate": "newData.isBoolean()"
+            },
+            "guarding": {
+              ".validate": "newData.isBoolean()"
+            }
+          }
+        }
+      }
+    }
+  }
+}

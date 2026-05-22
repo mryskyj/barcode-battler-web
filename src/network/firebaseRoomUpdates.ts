@@ -1,5 +1,6 @@
 import type { Character } from "../domain/character";
 import type { RemoteBattleRole } from "../domain/remoteBattle";
+import type { BattleCommand } from "../domain/battleTypes";
 import type { FirebaseCharacterDocument } from "./firebaseRoomDocument";
 
 export type FirebaseRoomUpdate = Record<string, unknown>;
@@ -28,6 +29,24 @@ export function createCharacterReadyUpdate(
   return {
     [`${role}/character`]: characterToFirebaseDocument(character),
     [`${role}/ready`]: true,
+    updatedAt: now,
+  };
+}
+
+export function createRemoteBattleStartUpdate(now: number): FirebaseRoomUpdate {
+  return {
+    status: "playing",
+    updatedAt: now,
+  };
+}
+
+export function createCommandSelectionUpdate(
+  role: RemoteBattleRole,
+  command: BattleCommand,
+  now: number,
+): FirebaseRoomUpdate {
+  return {
+    [`${role}/selectedCommand`]: command,
     updatedAt: now,
   };
 }

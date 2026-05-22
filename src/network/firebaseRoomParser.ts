@@ -25,10 +25,9 @@ export function parseFirebaseRoomDocument(value: unknown): FirebaseRoomDocument 
     roomId: requireString(object.roomId, "room.roomId"),
     status: requireOneOf(object.status, ROOM_STATUSES, "room.status"),
     host: parseParticipantDocument(object.host, "room.host"),
-    guest:
-      object.guest === null
-        ? null
-        : parseParticipantDocument(object.guest, "room.guest"),
+    guest: isMissingNullable(object.guest)
+      ? null
+      : parseParticipantDocument(object.guest, "room.guest"),
     battle: parseBattleDocument(object.battle, "room.battle"),
     updatedAt: requireNumber(object.updatedAt, "room.updatedAt"),
   };
@@ -60,15 +59,13 @@ function parseParticipantDocument(
     role: requireOneOf(object.role, REMOTE_ROLES, `${path}.role`),
     clientId: requireString(object.clientId, `${path}.clientId`),
     connected: requireBoolean(object.connected, `${path}.connected`),
-    character:
-      object.character === null
-        ? null
-        : parseCharacterDocument(object.character, `${path}.character`),
+    character: isMissingNullable(object.character)
+      ? null
+      : parseCharacterDocument(object.character, `${path}.character`),
     ready: requireBoolean(object.ready, `${path}.ready`),
-    selectedCommand:
-      object.selectedCommand === null
-        ? null
-        : requireOneOf(object.selectedCommand, BATTLE_COMMANDS, `${path}.selectedCommand`),
+    selectedCommand: isMissingNullable(object.selectedCommand)
+      ? null
+      : requireOneOf(object.selectedCommand, BATTLE_COMMANDS, `${path}.selectedCommand`),
   };
 }
 
@@ -77,17 +74,18 @@ function parseBattleDocument(value: unknown, path: string): FirebaseBattleDocume
 
   return {
     round: requireNumber(object.round, `${path}.round`),
-    host:
-      object.host === null ? null : parseCombatantDocument(object.host, `${path}.host`),
-    guest:
-      object.guest === null
-        ? null
-        : parseCombatantDocument(object.guest, `${path}.guest`),
-    log: requireStringArray(object.log, `${path}.log`),
-    winner:
-      object.winner === null
-        ? null
-        : requireOneOf(object.winner, WINNERS, `${path}.winner`),
+    host: isMissingNullable(object.host)
+      ? null
+      : parseCombatantDocument(object.host, `${path}.host`),
+    guest: isMissingNullable(object.guest)
+      ? null
+      : parseCombatantDocument(object.guest, `${path}.guest`),
+    log: isMissingNullable(object.log)
+      ? []
+      : requireStringArray(object.log, `${path}.log`),
+    winner: isMissingNullable(object.winner)
+      ? null
+      : requireOneOf(object.winner, WINNERS, `${path}.winner`),
   };
 }
 
@@ -182,6 +180,10 @@ function requireRecord(value: unknown, path: string): Record<string, unknown> {
   }
 
   return value as Record<string, unknown>;
+}
+
+function isMissingNullable(value: unknown): value is null | undefined {
+  return value === null || value === undefined;
 }
 
 function requireString(value: unknown, path: string): string {

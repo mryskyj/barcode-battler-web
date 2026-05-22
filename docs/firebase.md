@@ -29,6 +29,20 @@ VITE_FIREBASE_APP_ID=...
 - Phase 3では認証なしで開始し、部屋IDを知っている2人だけが使う前提にする
 - クライアントコードからFirebase SDKを直接呼ばず、`src/network` のラッパー経由で読み書きする
 
+## Realtime Database Rules
+
+開発確認後は、Firebase ConsoleのRealtime Database Rulesへ `database.rules.json` の内容を貼り付けて公開する。
+
+このルールで制限すること:
+
+- ルートや `rooms` 一覧は読めない
+- `rooms/{roomId}` だけ読める
+- 部屋IDは `A-Z` と `0-9` の6文字だけ許可する
+- ルーム、参加者、キャラクター、バトル状態の最低限の型を検証する
+- 未知のトップレベルフィールドを書けないようにする
+
+Phase 3では認証なしのため、このルールは完全な不正対策ではない。部屋IDを知っている人は同じ部屋へ読み書きできる。公開範囲を広げる場合は、Firebase Authentication、App Check、commit/reveal、またはサーバー権威型の導入を検討する。
+
 ## ローカル確認
 
 ```bash

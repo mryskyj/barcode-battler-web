@@ -2,6 +2,8 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
+import { createRemoteBattleRoom, type RemoteBattleRoom } from "./domain/remoteBattle";
+import type { FirebaseRoomRepository } from "./network/firebaseRoomRepository";
 
 describe("App", () => {
   afterEach(() => {
@@ -132,25 +134,25 @@ describe("App", () => {
 
   it("shows remote character setup after creating a room", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<App remoteRepository={createTestRemoteRepository()} />);
 
     await user.click(screen.getByRole("radio", { name: "通信対戦" }));
     await user.click(screen.getByRole("button", { name: "部屋を作る" }));
 
-    expect(screen.getByText("ホストとして参加中")).toBeInTheDocument();
-    expect(screen.getByText("接続準備中")).toBeInTheDocument();
-    expect(screen.getByText("自分のキャラクター準備待ち")).toBeInTheDocument();
+    expect(await screen.findByText("ホストとして参加中")).toBeInTheDocument();
+    expect(screen.getByText("相手待ち")).toBeInTheDocument();
+    expect(screen.getByText("ゲストの参加待ち")).toBeInTheDocument();
     expect(screen.getByLabelText("自分のバーコード")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "キャラクター準備" })).toBeEnabled();
   });
 
   it("marks the remote character as ready", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<App remoteRepository={createTestRemoteRepository()} />);
 
     await user.click(screen.getByRole("radio", { name: "通信対戦" }));
     await user.click(screen.getByRole("button", { name: "部屋を作る" }));
-    await user.click(screen.getByRole("button", { name: "キャラクター準備" }));
+    await user.click(await screen.findByRole("button", { name: "キャラクター準備" }));
 
     expect(screen.getByText("キャラクター準備完了")).toBeInTheDocument();
     expect(screen.getByText("ゲストの参加・準備待ち")).toBeInTheDocument();
@@ -159,36 +161,42 @@ describe("App", () => {
 
   it("can leave remote setup and return to room selection", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<App remoteRepository={createTestRemoteRepository()} />);
 
     await user.click(screen.getByRole("radio", { name: "通信対戦" }));
     await user.click(screen.getByRole("button", { name: "部屋を作る" }));
-    await user.click(screen.getByRole("button", { name: "退出して戻る" }));
+    await user.click(await screen.findByRole("button", { name: "退出して戻る" }));
 
     expect(screen.getByRole("region", { name: "部屋を作る" })).toBeInTheDocument();
   });
 
   it("keeps remote setup controls available for compact layouts", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<App remoteRepository={createTestRemoteRepository()} />);
 
     await user.click(screen.getByRole("radio", { name: "通信対戦" }));
     await user.click(screen.getByRole("button", { name: "部屋を作る" }));
 
-    expect(screen.getByRole("status")).toHaveTextContent("接続準備中");
+    expect(await screen.findByRole("status")).toHaveTextContent("相手待ち");
     expect(screen.getByRole("button", { name: "キャラクター準備" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "退出して戻る" })).toBeEnabled();
   });
 
   it("normalizes remote room ids before joining", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(
+      <App
+        remoteRepository={createTestRemoteRepository([
+          createRemoteBattleRoom("AB12CD", "host-client", 1000),
+        ])}
+      />,
+    );
 
     await user.click(screen.getByRole("radio", { name: "通信対戦" }));
     await user.type(screen.getByLabelText("部屋ID"), " ab12cd ");
     await user.click(screen.getByRole("button", { name: "参加する" }));
 
-    expect(screen.getByText("AB12CD")).toBeInTheDocument();
+    expect(await screen.findByText("AB12CD")).toBeInTheDocument();
     expect(screen.getByText("ゲストとして参加中")).toBeInTheDocument();
   });
 
@@ -286,3 +294,73 @@ describe("App", () => {
     expect(screen.getByLabelText("バーコード")).toHaveValue("9999999999999");
   });
 });
+
+function createTestRemoteRepository(
+  initialRooms: RemoteBattleRoom[] = [],
+): FirebaseRoomRepository {
+  const rooms = new Map<string, RemoteBattleRoom>(
+    initialRooms.map((room) => [room.roomId, room]),
+  );
+  const subscribers = new Map<string, Set<(room: RemoteBattleRoom | null) => void>>();
+
+  function notify(roomId: string) {
+    for (const subscriber of subscribers.get(roomId) ?? []) {
+      subscriber(rooms.get(roomId) ?? null);
+    }
+  }
+
+  return {
+    async createRoom(room) {
+      rooms.set(room.roomId, room);
+      notify(room.roomId);
+    },
+    async getRoom(roomId) {
+      return rooms.get(roomId) ?? null;
+    },
+    subscribeRoom(roomId, onRoom) {
+      const roomSubscribers = subscribers.get(roomId) ?? new Set();
+      roomSubscribers.add(onRoom);
+      subscribers.set(roomId, roomSubscribers);
+      onRoom(rooms.get(roomId) ?? null);
+
+      return () => {
+        roomSubscribers.delete(onRoom);
+      };
+    },
+    async updateRoom(roomId, values) {
+      const room = rooms.get(roomId);
+
+      if (room === undefined) {
+        return;
+      }
+
+      const nextRoom = applyFirebaseUpdate(room, values);
+      rooms.set(roomId, nextRoom);
+      notify(roomId);
+    },
+    async removeRoom(roomId) {
+      rooms.delete(roomId);
+      notify(roomId);
+    },
+  };
+}
+
+function applyFirebaseUpdate(
+  room: RemoteBattleRoom,
+  values: Record<string, unknown>,
+): RemoteBattleRoom {
+  const nextRoom = JSON.parse(JSON.stringify(room)) as Record<string, unknown>;
+
+  for (const [path, value] of Object.entries(values)) {
+    const segments = path.split("/");
+    let target = nextRoom;
+
+    for (const segment of segments.slice(0, -1)) {
+      target = target[segment] as Record<string, unknown>;
+    }
+
+    target[segments[segments.length - 1]] = value;
+  }
+
+  return nextRoom as RemoteBattleRoom;
+}
