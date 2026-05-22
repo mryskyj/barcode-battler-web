@@ -29,6 +29,25 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "たたかう" })).toBeInTheDocument();
   });
 
+  it("shows a battle mode selector", () => {
+    render(<App />);
+
+    expect(screen.getByRole("radio", { name: "CPU戦" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "2人ローカル対戦" })).toBeInTheDocument();
+  });
+
+  it("disables CPU battle start in local mode", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("radio", { name: "2人ローカル対戦" }));
+
+    expect(screen.getByText("2人ローカル対戦は次のタスクで実装します")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "生成して戦う" }),
+    ).toBeDisabled();
+  });
+
   it("keeps primary battle controls available for compact layouts", async () => {
     const user = userEvent.setup();
     render(<App />);

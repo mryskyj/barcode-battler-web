@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { BarcodeForm } from "./components/BarcodeForm";
 import { BattleLog } from "./components/BattleLog";
+import { BattleModeSelector } from "./components/BattleModeSelector";
 import { CommandButtons } from "./components/CommandButtons";
 import { CombatantPanel } from "./components/CombatantPanel";
 import {
@@ -9,12 +10,14 @@ import {
   type BattleCommand,
   type BattleState,
 } from "./domain/battle";
+import type { BattleMode } from "./domain/battleMode";
 import { validateBarcodeInput } from "./domain/barcodeValidation";
 import { createCharacter } from "./domain/character";
 
 const DEFAULT_ENEMY_BARCODE = "4512345678906";
 
 export function App() {
+  const [mode, setMode] = useState<BattleMode>("cpu");
   const [barcode, setBarcode] = useState("4901234567894");
   const [battle, setBattle] = useState<BattleState | null>(null);
   const barcodeValidation = validateBarcodeInput(barcode);
@@ -24,7 +27,7 @@ export function App() {
   );
 
   function startBattle() {
-    if (!barcodeValidation.isValid) {
+    if (mode !== "cpu" || !barcodeValidation.isValid) {
       return;
     }
 
@@ -54,10 +57,14 @@ export function App() {
 
       {battle === null ? (
         <section className="setup-panel" aria-label="キャラクター生成">
+          <BattleModeSelector value={mode} onChange={setMode} />
+          {mode === "local" ? (
+            <p className="mode-note">2人ローカル対戦は次のタスクで実装します</p>
+          ) : null}
           <BarcodeForm
             barcode={barcode}
             errorMessage={barcodeValidation.message}
-            canSubmit={barcodeValidation.isValid}
+            canSubmit={barcodeValidation.isValid && mode === "cpu"}
             onBarcodeChange={setBarcode}
             onSubmit={startBattle}
           />
