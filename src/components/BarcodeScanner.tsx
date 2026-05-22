@@ -2,10 +2,18 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { BrowserMultiFormatOneDReader } from "@zxing/browser";
 import { DecodeHintType } from "@zxing/library";
 import {
+  getVisibleCandidatePoints,
+  updateBarcodeCandidateTrack,
+  type BarcodeCandidateTrack,
+} from "./barcodeScannerCandidates";
+import {
   createScannerBox,
   type ScannerBox,
   type ScannerPoint,
 } from "./barcodeScannerGeometry";
+import {
+  createBarcodeScannerHints,
+} from "./barcodeScannerReader";
 
 type BarcodeScannerProps = {
   onDetected: (barcode: string) => void;
@@ -31,8 +39,11 @@ export function BarcodeScanner({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const previewRef = useRef<HTMLDivElement | null>(null);
   const controlsRef = useRef<ScannerControls | null>(null);
-  const successCloseTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanStreamRef = useRef<MediaStream | null>(null);
+  const candidateTrackRef = useRef<BarcodeCandidateTrack | null>(null);
   const candidateClearTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
+  const successCloseTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const onDetectedRef = useRef(onDetected);
   const onCloseRef = useRef(onClose);
   const cameraAvailable =
@@ -118,52 +129,84 @@ export function BarcodeScanner({
     }
 
     let cancelled = false;
-    const reader = new BrowserMultiFormatOneDReader(
-      new Map([
-        [
-          DecodeHintType.NEED_RESULT_POINT_CALLBACK,
-          {
-            foundPossibleResultPoint(point: ScannerResultPoint) {
-              if (cancelled) {
-                return;
-              }
+    const videoElement = videoRef.current;
+    const hints = createBarcodeScannerHints();
+    hints.set(DecodeHintType.NEED_RESULT_POINT_CALLBACK, {
+      foundPossibleResultPoint(point: ScannerResultPoint) {
+        if (cancelled) {
+          return;
+        }
 
-              queueCandidatePoint(point);
-            },
-          },
-        ],
-      ]),
-    );
-
-    function queueCandidatePoint(point: ScannerResultPoint) {
-      setCandidatePoints((currentPoints) => [
-        ...currentPoints.slice(-3),
-        {
+        updateCandidatePreview({
           x: point.getX(),
           y: point.getY(),
-        },
-      ]);
+        });
+      },
+    });
+
+    const reader = new BrowserMultiFormatOneDReader(hints);
+
+    function updateCandidatePreview(point: ScannerPoint) {
+      const sourceWidth = videoRef.current?.videoWidth ?? 0;
+      const sourceHeight = videoRef.current?.videoHeight ?? 0;
+
+      if (sourceWidth <= 0 || sourceHeight <= 0) {
+        return;
+      }
+
+      const nextTrack = updateBarcodeCandidateTrack(
+        candidateTrackRef.current,
+        point,
+        { width: sourceWidth, height: sourceHeight },
+        Date.now(),
+      );
+
+      candidateTrackRef.current = nextTrack;
+
+      const visiblePoints = getVisibleCandidatePoints(nextTrack, Date.now());
+      setCandidatePoints(visiblePoints ?? []);
 
       if (candidateClearTimeoutRef.current !== null) {
         globalThis.clearTimeout(candidateClearTimeoutRef.current);
       }
 
       candidateClearTimeoutRef.current = globalThis.setTimeout(() => {
+        candidateTrackRef.current = null;
         setCandidatePoints([]);
         candidateClearTimeoutRef.current = null;
-      }, 260);
+      }, 240);
     }
 
     async function startScanning() {
       try {
         setStatus("loading");
         setErrorMessage(null);
+        candidateTrackRef.current = null;
         setCandidatePoints([]);
         setSuccessPoints([]);
 
-        const controls = await reader.decodeFromVideoDevice(
+        const stream = await globalThis.navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
+        });
+
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        streamRef.current = stream;
+        const scanStream = stream.clone();
+        scanStreamRef.current = scanStream;
+
+        if (videoElement !== null) {
+          videoElement.srcObject = stream;
+          await videoElement.play();
+        }
+
+        const controls = await reader.decodeFromStream(
+          scanStream,
           undefined,
-          videoRef.current ?? undefined,
           (result, error, scannerControls) => {
             controlsRef.current = scannerControls;
 
@@ -179,14 +222,11 @@ export function BarcodeScanner({
 
             if (candidateClearTimeoutRef.current !== null) {
               globalThis.clearTimeout(candidateClearTimeoutRef.current);
+              candidateClearTimeoutRef.current = null;
             }
-
-            setSuccessPoints(
-              result.getResultPoints().map((point) => ({
-                x: point.getX(),
-                y: point.getY(),
-              })),
-            );
+            candidateTrackRef.current = null;
+            setCandidatePoints([]);
+            setSuccessPoints(toScannerPoints(result.getResultPoints()));
             scannerControls.stop();
             setDetectedBarcode(barcode);
             setStatus("success");
@@ -221,11 +261,19 @@ export function BarcodeScanner({
     return () => {
       cancelled = true;
       controlsRef.current?.stop();
-      if (successCloseTimeoutRef.current !== null) {
-        globalThis.clearTimeout(successCloseTimeoutRef.current);
+      scanStreamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      if (videoElement !== null) {
+        videoElement.srcObject = null;
       }
+      scanStreamRef.current = null;
+      streamRef.current = null;
       if (candidateClearTimeoutRef.current !== null) {
         globalThis.clearTimeout(candidateClearTimeoutRef.current);
+        candidateClearTimeoutRef.current = null;
+      }
+      if (successCloseTimeoutRef.current !== null) {
+        globalThis.clearTimeout(successCloseTimeoutRef.current);
       }
       controlsRef.current = null;
     };
@@ -241,9 +289,9 @@ export function BarcodeScanner({
       previewHeight: previewSize.height,
     });
   }, [
-    candidatePoints,
     previewSize.height,
     previewSize.width,
+    candidatePoints,
     status,
     successPoints,
     videoSize.height,
@@ -316,4 +364,11 @@ function getScannerErrorMessage(error: unknown): string {
   }
 
   return "カメラを起動できませんでした";
+}
+
+function toScannerPoints(resultPoints: ScannerResultPoint[]): ScannerPoint[] {
+  return resultPoints.map((point) => ({
+    x: point.getX(),
+    y: point.getY(),
+  }));
 }

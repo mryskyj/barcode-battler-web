@@ -24,7 +24,7 @@ const barcodeScannerMock = vi.hoisted(() => {
       ) => void)
     | null = null;
 
-  const decodeFromVideoDevice = vi.fn(async (_deviceId, _preview, nextCallback) => {
+  const decodeFromStream = vi.fn(async (_stream, _preview, nextCallback) => {
     callback = nextCallback;
     return controls;
   });
@@ -32,7 +32,7 @@ const barcodeScannerMock = vi.hoisted(() => {
   const BrowserMultiFormatOneDReader = vi.fn(
     function BrowserMultiFormatOneDReader() {
       return {
-        decodeFromVideoDevice,
+        decodeFromStream,
         reset,
       };
     },
@@ -41,7 +41,7 @@ const barcodeScannerMock = vi.hoisted(() => {
   return {
     BrowserMultiFormatOneDReader,
     controls,
-    decodeFromVideoDevice,
+    decodeFromStream,
     getCallback: () => callback,
     reset,
   };
@@ -54,10 +54,36 @@ vi.mock("@zxing/browser", () => ({
 describe("BarcodeForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(globalThis.HTMLMediaElement.prototype, "play", {
+      configurable: true,
+      value: vi.fn(async () => undefined),
+    });
+    Object.defineProperty(globalThis.HTMLMediaElement.prototype, "srcObject", {
+      configurable: true,
+      get() {
+        return (this as HTMLMediaElement & { _srcObject?: MediaStream | null })._srcObject ?? null;
+      },
+      set(value) {
+        (this as HTMLMediaElement & { _srcObject?: MediaStream | null })._srcObject = value;
+      },
+    });
     Object.defineProperty(globalThis.navigator, "mediaDevices", {
       configurable: true,
       value: {
-        getUserMedia: vi.fn(),
+        getUserMedia: vi.fn(async () => ({
+          clone: () => ({
+            getTracks: () => [
+              {
+                stop: vi.fn(),
+              },
+            ],
+          }),
+          getTracks: () => [
+            {
+              stop: vi.fn(),
+            },
+          ],
+        })),
       },
     });
   });
@@ -75,7 +101,7 @@ describe("BarcodeForm", () => {
     await user.click(screen.getByRole("button", { name: "カメラで読み取る" }));
 
     await waitFor(() => {
-      expect(barcodeScannerMock.decodeFromVideoDevice).toHaveBeenCalled();
+      expect(barcodeScannerMock.decodeFromStream).toHaveBeenCalled();
     });
 
     expect(screen.getByText("バーコードを探しています")).toBeInTheDocument();

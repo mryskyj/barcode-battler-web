@@ -246,16 +246,12 @@ input {
   position: relative;
   overflow: hidden;
   border-radius: 6px;
-  background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.84), rgba(0, 0, 0, 0.56)),
-    #000000;
+  background: #dfe5e7;
   aspect-ratio: 4 / 3;
 }
 
 .barcode-scanner-preview-success {
-  background:
-    linear-gradient(180deg, rgba(28, 123, 84, 0.28), rgba(0, 0, 0, 0.45)),
-    #000000;
+  background: #dff3e9;
 }
 
 .barcode-scanner-preview video {
