@@ -13,6 +13,10 @@ const barcodeScannerMock = vi.hoisted(() => {
         result:
           | {
               getText: () => string;
+              getResultPoints?: () => Array<{
+                getX: () => number;
+                getY: () => number;
+              }>;
             }
           | undefined,
         error: Error | undefined,
@@ -74,6 +78,8 @@ describe("BarcodeForm", () => {
       expect(barcodeScannerMock.decodeFromVideoDevice).toHaveBeenCalled();
     });
 
+    expect(screen.getByText("バーコードを探しています")).toBeInTheDocument();
+
     const callback = barcodeScannerMock.getCallback();
 
     expect(callback).not.toBeNull();
@@ -82,6 +88,16 @@ describe("BarcodeForm", () => {
       callback?.(
         {
           getText: () => " 4901234567894 ",
+          getResultPoints: () => [
+            {
+              getX: () => 10,
+              getY: () => 20,
+            },
+            {
+              getX: () => 80,
+              getY: () => 20,
+            },
+          ],
         },
         undefined,
         barcodeScannerMock.controls,
