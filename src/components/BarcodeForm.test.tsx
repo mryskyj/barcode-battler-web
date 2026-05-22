@@ -43,6 +43,7 @@ vi.mock("@zxing/browser", () => ({
 describe("BarcodeForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    globalThis.localStorage.clear();
     Object.defineProperty(globalThis.HTMLVideoElement.prototype, "videoWidth", {
       configurable: true,
       get() {
@@ -115,8 +116,7 @@ describe("BarcodeForm", () => {
       expect(barcodeScannerMock.decodeFromCanvas).toHaveBeenCalled();
     });
 
-    const logPanel = screen.getByLabelText("バーコードスキャナーログ");
-    expect(within(logPanel).getByText("scan-start")).toBeInTheDocument();
+    expect(screen.queryByLabelText("バーコードスキャナーログ")).not.toBeInTheDocument();
 
     expect(screen.getByText("読み取り成功: 4901234567894")).toBeInTheDocument();
 
@@ -126,6 +126,22 @@ describe("BarcodeForm", () => {
 
     expect(screen.getByLabelText("バーコード")).toHaveValue("4901234567894");
     expect(screen.queryByRole("button", { name: "カメラを閉じる" })).not.toBeInTheDocument();
+  });
+
+  it("shows scanner debug logs when explicitly enabled", async () => {
+    globalThis.localStorage.setItem("barcodeScannerDebug", "1");
+    const user = userEvent.setup();
+
+    render(<BarcodeFormHarness onSubmit={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "カメラで読み取る" }));
+
+    await waitFor(() => {
+      expect(barcodeScannerMock.decodeFromCanvas).toHaveBeenCalled();
+    });
+
+    const logPanel = screen.getByLabelText("バーコードスキャナーログ");
+    expect(within(logPanel).getByText("scan-start")).toBeInTheDocument();
   });
 });
 

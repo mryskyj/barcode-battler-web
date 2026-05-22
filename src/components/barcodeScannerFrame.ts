@@ -39,6 +39,9 @@ export function drawVideoFrameToCanvas(
   canvas: HTMLCanvasElement,
   frame: ScannerFrame,
 ): CanvasRenderingContext2D {
+  canvas.width = frame.canvasWidth;
+  canvas.height = frame.canvasHeight;
+
   const context =
     canvas.getContext("2d", { willReadFrequently: true }) ??
     canvas.getContext("2d");
@@ -47,8 +50,6 @@ export function drawVideoFrameToCanvas(
     throw new Error("Could not create a Canvas element.");
   }
 
-  canvas.width = frame.canvasWidth;
-  canvas.height = frame.canvasHeight;
   context.setTransform(1, 0, 0, 1, 0, 0);
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.translate(canvas.width / 2, canvas.height / 2);

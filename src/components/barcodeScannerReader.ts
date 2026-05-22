@@ -17,5 +17,6 @@ export const BARCODE_SCANNER_FORMATS = [
 export function createBarcodeScannerHints(): Map<DecodeHintType, unknown> {
   return new Map<DecodeHintType, unknown>([
     [DecodeHintType.POSSIBLE_FORMATS, [...BARCODE_SCANNER_FORMATS]],
+    [DecodeHintType.TRY_HARDER, true],
   ]);
 }

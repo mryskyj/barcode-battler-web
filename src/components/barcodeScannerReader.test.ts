@@ -6,10 +6,10 @@ import {
 } from "./barcodeScannerReader";
 
 describe("barcodeScannerReader", () => {
-  it("does not enable try harder scanning", () => {
+  it("enables try harder scanning", () => {
     const hints = createBarcodeScannerHints();
 
-    expect(hints.get(DecodeHintType.TRY_HARDER)).toBeUndefined();
+    expect(hints.get(DecodeHintType.TRY_HARDER)).toBe(true);
   });
 
   it("limits scanning to common 1D formats", () => {

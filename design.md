@@ -185,10 +185,33 @@ rooms/{roomId}
 - 読み取り結果は既存の `onBarcodeChange` に流し込む
 - 読み取りできたら自動でカメラを止める
 - 未対応ブラウザではエラーメッセージを出し、手入力を妨げない
+- 小さいバーコードに対応しやすいように、高めのカメラ解像度と大きめのスキャンキャンバスを使う
+- 黒以外のバーコードや薄いバーコードに対応するため、元画像に加えて輝度コントラスト補正と色チャンネル補正の候補も読み取る
+- 高解像度カメラや大きいCanvasが使えない端末では、カメラ制約とスキャンキャンバスサイズを段階的に下げて継続する
+- スキャナーのデバッグログは通常表示しない。開発時に `?scannerDebug=1` または `localStorage.setItem("barcodeScannerDebug", "1")` を指定した場合だけ、画面ログとコンソールログを出す
+
+### カメラ実装の分割
+
+- `BarcodeScanner.tsx` はカメラUIの描画を担当する
+- `useBarcodeScanner.ts` はReact状態、カメラ起動、読み取りループ、検出後の通知を担当する
+- `BarcodeScannerDebugPanel.tsx` はスキャナーデバッグログの表示だけを担当する
+- カメラ制約とスキャン間隔は `barcodeScannerConfig.ts` に置く
+- カメラ取得のフォールバックは `barcodeScannerCamera.ts` に置く
+- 読み取り用画像補正は `barcodeScannerImage.ts` に置く
+- Canvasフレーム作成と座標変換は `barcodeScannerFrame.ts` に置く
+- スキャナーのデバッグ表示可否と詳細整形は `barcodeScannerDebug.ts` に置く
+- エラー分類は `barcodeScannerErrors.ts` に置く
+
+## Phase 5以降
+
+Phase 5以降は、カメラ読み取りとは独立した追加機能として扱う。
+
+- QRコード参加
+- ランキング
+- アカウント機能
 
 ## 非対象
 
-- 通信対戦
-- QRコード参加
-- カメラ読み取り
-- アカウント・ランキング
+- WebRTC DataChannel対戦
+- 自前のExpressサーバー
+- Socket.IO
