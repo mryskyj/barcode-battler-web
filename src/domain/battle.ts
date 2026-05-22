@@ -1,9 +1,19 @@
 import type { BattleCommand, BattleSide, BattleState, Combatant } from "./battleTypes";
 import type { Character } from "./character";
+import { COMMAND_LABELS } from "./commandLabels";
 
 export type { BattleCommand, BattleSide, BattleState, Combatant } from "./battleTypes";
 
 export type RandomSource = () => number;
+
+export const DAMAGE_BALANCE = {
+  defenseDivider: 2,
+  chargeMultiplier: 1.6,
+  specialMultiplier: 1.9,
+  guardMultiplier: 0.5,
+  minVariance: 0.85,
+  varianceWidth: 0.3,
+} as const;
 
 export function createBattle(player: Character, enemy: Character): BattleState {
   return {
@@ -81,13 +91,13 @@ function resolveAction(
   if (command === "charge") {
     actor.charged = true;
     actor.guarding = false;
-    nextState.log.push(`${actorLabel}は力をためた`);
+    nextState.log.push(`${actorLabel}は「${COMMAND_LABELS.charge}」で力をためた`);
     return nextState;
   }
 
   if (command === "guard") {
     actor.guarding = true;
-    nextState.log.push(`${actorLabel}は身を守った`);
+    nextState.log.push(`${actorLabel}は「${COMMAND_LABELS.guard}」で身を守った`);
     return nextState;
   }
 
@@ -95,25 +105,28 @@ function resolveAction(
 
   if (command === "special" && random() >= 0.7) {
     actor.charged = false;
-    nextState.log.push(`${actorLabel}の必殺は外れた`);
+    nextState.log.push(`${actorLabel}の「${COMMAND_LABELS.special}」は外れた`);
     return nextState;
   }
 
   const damage = calculateDamage(actor, target, command, random);
+  const guardText = target.guarding ? " 相手のまもりでダメージ軽減。" : "";
   actor.charged = false;
   target.guarding = false;
   target.currentHp = Math.max(0, target.currentHp - damage);
-  nextState.log.push(`${actorLabel}の攻撃。${damage}ダメージ`);
+  nextState.log.push(
+    `${actorLabel}の「${COMMAND_LABELS[command]}」。${damage}ダメージ。${guardText}`,
+  );
 
   if (target.currentHp <= 0) {
     nextState.winner = actorSide;
-    nextState.log.push(`${actorLabel}の勝利`);
+    nextState.log.push(`${actorLabel}の勝利。バトル終了`);
   }
 
   return nextState;
 }
 
-function calculateDamage(
+export function calculateDamage(
   actor: Combatant,
   target: Combatant,
   command: BattleCommand,
@@ -121,12 +134,15 @@ function calculateDamage(
 ): number {
   const baseDamage = Math.max(
     1,
-    actor.character.stats.power - Math.floor(target.character.stats.defense / 2),
+    actor.character.stats.power -
+      Math.floor(target.character.stats.defense / DAMAGE_BALANCE.defenseDivider),
   );
-  const chargeMultiplier = actor.charged ? 1.75 : 1;
-  const specialMultiplier = command === "special" ? 2.2 : 1;
-  const guardMultiplier = target.guarding ? 0.5 : 1;
-  const variance = 0.85 + random() * 0.3;
+  const chargeMultiplier = actor.charged ? DAMAGE_BALANCE.chargeMultiplier : 1;
+  const specialMultiplier =
+    command === "special" ? DAMAGE_BALANCE.specialMultiplier : 1;
+  const guardMultiplier = target.guarding ? DAMAGE_BALANCE.guardMultiplier : 1;
+  const variance =
+    DAMAGE_BALANCE.minVariance + random() * DAMAGE_BALANCE.varianceWidth;
 
   return Math.max(
     1,

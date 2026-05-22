@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  calculateDamage,
   chooseEnemyCommand,
   createBattle,
   executeTurn,
@@ -91,6 +92,29 @@ describe("executeTurn", () => {
     );
   });
 
+  it("logs command names and damage results", () => {
+    const state = executeTurn(
+      createBattle(player, enemy),
+      "special",
+      sequenceRandom([0.2, 0.5]),
+      "guard",
+    );
+
+    expect(state.log).toContain("プレイヤーの「必殺」。47ダメージ。");
+    expect(state.log).toContain("敵は「まもる」で身を守った");
+  });
+
+  it("logs special misses", () => {
+    const state = executeTurn(
+      createBattle(player, enemy),
+      "special",
+      fixedRandom(0.8),
+      "guard",
+    );
+
+    expect(state.log).toContain("プレイヤーの「必殺」は外れた");
+  });
+
   it("sets winner when HP reaches zero", () => {
     const strongPlayer = createTestCharacter("strong", {
       hp: 120,
@@ -106,6 +130,79 @@ describe("executeTurn", () => {
     );
 
     expect(state.winner).toBe("player");
+    expect(state.log).toContain("プレイヤーの勝利。バトル終了");
+  });
+});
+
+describe("calculateDamage", () => {
+  it("applies variance within the required damage range", () => {
+    const minDamage = calculateDamage(
+      createCombatant(player),
+      createCombatant(enemy),
+      "attack",
+      fixedRandom(0),
+    );
+    const maxDamage = calculateDamage(
+      createCombatant(player),
+      createCombatant(enemy),
+      "attack",
+      fixedRandom(1),
+    );
+
+    expect(minDamage).toBe(21);
+    expect(maxDamage).toBe(28);
+  });
+
+  it("keeps charge stronger than normal attack", () => {
+    const normalDamage = calculateDamage(
+      createCombatant(player),
+      createCombatant(enemy),
+      "attack",
+      fixedRandom(0.5),
+    );
+    const chargedDamage = calculateDamage(
+      { ...createCombatant(player), charged: true },
+      createCombatant(enemy),
+      "attack",
+      fixedRandom(0.5),
+    );
+
+    expect(chargedDamage).toBeGreaterThan(normalDamage);
+  });
+
+  it("keeps guard effective against incoming damage", () => {
+    const normalDamage = calculateDamage(
+      createCombatant(enemy),
+      createCombatant(player),
+      "attack",
+      fixedRandom(0.5),
+    );
+    const guardedDamage = calculateDamage(
+      createCombatant(enemy),
+      { ...createCombatant(player), guarding: true },
+      "attack",
+      fixedRandom(0.5),
+    );
+
+    expect(guardedDamage).toBeLessThan(normalDamage);
+  });
+
+  it("keeps special stronger than normal attack without doubling it too far", () => {
+    const normalDamage = calculateDamage(
+      createCombatant(player),
+      createCombatant(enemy),
+      "attack",
+      fixedRandom(0.5),
+    );
+    const specialDamage = calculateDamage(
+      createCombatant(player),
+      createCombatant(enemy),
+      "special",
+      fixedRandom(0.5),
+    );
+
+    expect(specialDamage).toBeGreaterThan(normalDamage);
+    expect(specialDamage).toBeLessThan(normalDamage * 2);
   });
 });
 
@@ -130,6 +227,15 @@ function createTestCharacter(id: string, stats: CharacterStats): Character {
     name: id,
     barcode: id,
     stats,
+  };
+}
+
+function createCombatant(character: Character) {
+  return {
+    character,
+    currentHp: character.stats.hp,
+    charged: false,
+    guarding: false,
   };
 }
 

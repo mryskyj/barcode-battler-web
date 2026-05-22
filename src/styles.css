@@ -19,6 +19,10 @@ input {
   font: inherit;
 }
 
+input {
+  font-size: 16px;
+}
+
 .app-shell {
   min-height: 100vh;
   width: min(100%, 1040px);
@@ -70,6 +74,17 @@ input {
   background: #ffffff;
 }
 
+.field input[aria-invalid="true"] {
+  border-color: #b83232;
+}
+
+.field-error {
+  margin: -4px 0 0;
+  color: #9b2626;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 button {
   min-height: 44px;
   border: 0;
@@ -79,6 +94,11 @@ button {
   background: #176b5b;
   font-weight: 700;
   cursor: pointer;
+}
+
+.secondary-button {
+  color: #17443d;
+  background: #d8ece6;
 }
 
 button:disabled {
@@ -98,6 +118,7 @@ button:disabled {
 
 .combatant-panel {
   padding: 14px;
+  min-width: 0;
 }
 
 .combatant-heading,
@@ -195,10 +216,21 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .result-panel strong {
   font-size: 1.5rem;
+}
+
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.result-actions button {
+  flex: 1 1 160px;
 }
 
 .battle-log {
@@ -208,10 +240,52 @@ button:disabled {
 .battle-log ol {
   display: grid;
   gap: 8px;
-  max-height: 240px;
+  max-height: min(42vh, 320px);
   margin: 12px 0 0;
   padding-left: 24px;
   overflow: auto;
+}
+
+@media (max-width: 420px) {
+  .app-shell {
+    padding: 12px;
+  }
+
+  .app-header {
+    margin-bottom: 14px;
+  }
+
+  .setup-panel,
+  .control-panel,
+  .battle-log,
+  .combatant-panel {
+    border-radius: 6px;
+  }
+
+  .combatant-panel,
+  .battle-log {
+    padding: 12px;
+  }
+
+  .stats-grid {
+    gap: 6px;
+  }
+
+  .stats-grid div {
+    padding: 7px;
+  }
+
+  .command-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .result-actions {
+    width: 100%;
+  }
+
+  .result-actions button {
+    flex-basis: 100%;
+  }
 }
 
 @media (min-width: 760px) {

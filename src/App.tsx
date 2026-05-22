@@ -9,6 +9,7 @@ import {
   type BattleCommand,
   type BattleState,
 } from "./domain/battle";
+import { validateBarcodeInput } from "./domain/barcodeValidation";
 import { createCharacter } from "./domain/character";
 
 const DEFAULT_ENEMY_BARCODE = "4512345678906";
@@ -16,13 +17,22 @@ const DEFAULT_ENEMY_BARCODE = "4512345678906";
 export function App() {
   const [barcode, setBarcode] = useState("4901234567894");
   const [battle, setBattle] = useState<BattleState | null>(null);
+  const barcodeValidation = validateBarcodeInput(barcode);
   const enemy = useMemo(
     () => createCharacter(DEFAULT_ENEMY_BARCODE, "CPU"),
     [],
   );
 
   function startBattle() {
-    const player = createCharacter(barcode, "プレイヤー");
+    if (!barcodeValidation.isValid) {
+      return;
+    }
+
+    const player = createCharacter(
+      barcodeValidation.normalizedBarcode,
+      "プレイヤー",
+    );
+    setBarcode(barcodeValidation.normalizedBarcode);
     setBattle(createBattle(player, enemy));
   }
 
@@ -46,6 +56,8 @@ export function App() {
         <section className="setup-panel" aria-label="キャラクター生成">
           <BarcodeForm
             barcode={barcode}
+            errorMessage={barcodeValidation.message}
+            canSubmit={barcodeValidation.isValid}
             onBarcodeChange={setBarcode}
             onSubmit={startBattle}
           />
@@ -54,7 +66,8 @@ export function App() {
         <BattleView
           battle={battle}
           onCommand={handleCommand}
-          onReset={resetBattle}
+          onRematch={startBattle}
+          onBackToSetup={resetBattle}
         />
       )}
     </main>
@@ -64,11 +77,13 @@ export function App() {
 function BattleView({
   battle,
   onCommand,
-  onReset,
+  onRematch,
+  onBackToSetup,
 }: {
   battle: BattleState;
   onCommand: (command: BattleCommand) => void;
-  onReset: () => void;
+  onRematch: () => void;
+  onBackToSetup: () => void;
 }) {
   const winnerText =
     battle.winner === null
@@ -90,9 +105,14 @@ function BattleView({
         ) : (
           <div className="result-panel">
             <strong>{winnerText}</strong>
-            <button type="button" onClick={onReset}>
-              再戦
-            </button>
+            <div className="result-actions">
+              <button type="button" onClick={onRematch}>
+                同じバーコードで再戦
+              </button>
+              <button type="button" className="secondary-button" onClick={onBackToSetup}>
+                入力へ戻る
+              </button>
+            </div>
           </div>
         )}
       </section>
