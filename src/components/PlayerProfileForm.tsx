@@ -36,10 +36,10 @@ export function PlayerProfileForm({
   return (
     <section className="profile-panel" aria-label="プロフィール">
       <div className="profile-summary">
-        <p className="profile-kicker">PLAYER SETUP</p>
+        <p className="profile-kicker">なまえをきめよう</p>
         <h2>{profile === null ? "プレイヤーとうろく" : "プレイヤーへんこう"}</h2>
         {profile === null ? (
-          <p className="profile-help">バトルで使う名前を決めよう</p>
+          <p className="profile-help">プレイヤーカードに名前を書こう</p>
         ) : (
           <p className="profile-current-name">
             <span>いまの名前</span>
@@ -48,7 +48,7 @@ export function PlayerProfileForm({
         )}
       </div>
       <form className="barcode-form" onSubmit={handleSubmit}>
-        <label className="field">
+        <label className="field profile-name-field">
           <span>ユーザー名</span>
           <input
             value={displayNameInput}

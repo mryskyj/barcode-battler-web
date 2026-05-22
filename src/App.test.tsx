@@ -64,7 +64,8 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "はじめる" }));
 
     expect(screen.getByText("プレイヤーとうろく")).toBeInTheDocument();
-    expect(screen.getByText("バトルで使う名前を決めよう")).toBeInTheDocument();
+    expect(screen.getByText("なまえをきめよう")).toBeInTheDocument();
+    expect(screen.getByText("プレイヤーカードに名前を書こう")).toBeInTheDocument();
     await user.type(screen.getByLabelText("ユーザー名"), " Alice ");
     await user.click(screen.getByRole("button", { name: "ユーザー名を保存" }));
 
