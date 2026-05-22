@@ -252,12 +252,6 @@ input {
   aspect-ratio: 4 / 3;
 }
 
-.barcode-scanner-preview-scanning {
-  background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.5)),
-    #000000;
-}
-
 .barcode-scanner-preview-success {
   background:
     linear-gradient(180deg, rgba(28, 123, 84, 0.28), rgba(0, 0, 0, 0.45)),
@@ -275,22 +269,6 @@ input {
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-
-.barcode-scanner-searching-frame {
-  position: absolute;
-  inset: 14% 12%;
-  border: 2px solid rgba(245, 198, 68, 0.18);
-  border-radius: 8px;
-  box-shadow:
-    0 0 0 1px rgba(245, 198, 68, 0.08) inset,
-    0 0 0 999px rgba(0, 0, 0, 0.08) inset;
-  opacity: 0;
-}
-
-.barcode-scanner-searching-frame-visible {
-  opacity: 1;
-  animation: barcode-search-frame 1.2s ease-in-out infinite;
 }
 
 .barcode-scanner-target {
@@ -343,18 +321,6 @@ input {
   font-size: 1.2rem;
   line-height: 1.2;
   word-break: break-all;
-}
-
-@keyframes barcode-search-frame {
-  0%,
-  100% {
-    opacity: 0.52;
-    transform: scale(0.995);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
 }
 
 @keyframes barcode-target-searching {

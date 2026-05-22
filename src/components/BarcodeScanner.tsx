@@ -264,13 +264,6 @@ export function BarcodeScanner({
       </div>
       <div ref={previewRef} className={`barcode-scanner-preview barcode-scanner-preview-${status}`}>
         <div className="barcode-scanner-overlay" aria-hidden="true">
-          <span
-            className={`barcode-scanner-searching-frame${
-              activeBox === null && status !== "success"
-                ? " barcode-scanner-searching-frame-visible"
-                : ""
-            }`}
-          />
           {activeBox === null ? null : (
             <span
               className={`barcode-scanner-target barcode-scanner-target-${
