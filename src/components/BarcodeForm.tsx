@@ -6,6 +6,8 @@ type BarcodeFormProps = {
   canSubmit: boolean;
   onBarcodeChange: (barcode: string) => void;
   onSubmit: () => void;
+  submitLabel?: string;
+  label?: string;
 };
 
 export function BarcodeForm({
@@ -14,6 +16,8 @@ export function BarcodeForm({
   canSubmit,
   onBarcodeChange,
   onSubmit,
+  submitLabel = "生成して戦う",
+  label = "バーコード",
 }: BarcodeFormProps) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -26,7 +30,7 @@ export function BarcodeForm({
   return (
     <form className="barcode-form" onSubmit={handleSubmit}>
       <label className="field">
-        <span>バーコード</span>
+        <span>{label}</span>
         <input
           value={barcode}
           onChange={(event) => onBarcodeChange(event.target.value)}
@@ -42,7 +46,7 @@ export function BarcodeForm({
         </p>
       )}
       <button type="submit" disabled={!canSubmit}>
-        生成して戦う
+        {submitLabel}
       </button>
     </form>
   );

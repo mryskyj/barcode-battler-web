@@ -4,6 +4,7 @@ import { BattleLog } from "./components/BattleLog";
 import { BattleModeSelector } from "./components/BattleModeSelector";
 import { CommandButtons } from "./components/CommandButtons";
 import { CombatantPanel } from "./components/CombatantPanel";
+import { LocalBattleSetup } from "./components/LocalBattleSetup";
 import {
   createBattle,
   executeTurn,
@@ -19,8 +20,12 @@ const DEFAULT_ENEMY_BARCODE = "4512345678906";
 export function App() {
   const [mode, setMode] = useState<BattleMode>("cpu");
   const [barcode, setBarcode] = useState("4901234567894");
+  const [player1Barcode, setPlayer1Barcode] = useState("4901234567894");
+  const [player2Barcode, setPlayer2Barcode] = useState("4901234567895");
   const [battle, setBattle] = useState<BattleState | null>(null);
   const barcodeValidation = validateBarcodeInput(barcode);
+  const player1BarcodeValidation = validateBarcodeInput(player1Barcode);
+  const player2BarcodeValidation = validateBarcodeInput(player2Barcode);
   const enemy = useMemo(
     () => createCharacter(DEFAULT_ENEMY_BARCODE, "CPU"),
     [],
@@ -58,16 +63,26 @@ export function App() {
       {battle === null ? (
         <section className="setup-panel" aria-label="キャラクター生成">
           <BattleModeSelector value={mode} onChange={setMode} />
-          {mode === "local" ? (
-            <p className="mode-note">2人ローカル対戦は次のタスクで実装します</p>
-          ) : null}
-          <BarcodeForm
-            barcode={barcode}
-            errorMessage={barcodeValidation.message}
-            canSubmit={barcodeValidation.isValid && mode === "cpu"}
-            onBarcodeChange={setBarcode}
-            onSubmit={startBattle}
-          />
+          {mode === "cpu" ? (
+            <BarcodeForm
+              barcode={barcode}
+              errorMessage={barcodeValidation.message}
+              canSubmit={barcodeValidation.isValid}
+              onBarcodeChange={setBarcode}
+              onSubmit={startBattle}
+            />
+          ) : (
+            <LocalBattleSetup
+              player1Barcode={player1Barcode}
+              player1ErrorMessage={player1BarcodeValidation.message}
+              player1CanSubmit={player1BarcodeValidation.isValid}
+              player2Barcode={player2Barcode}
+              player2ErrorMessage={player2BarcodeValidation.message}
+              player2CanSubmit={player2BarcodeValidation.isValid}
+              onPlayer1BarcodeChange={setPlayer1Barcode}
+              onPlayer2BarcodeChange={setPlayer2Barcode}
+            />
+          )}
         </section>
       ) : (
         <BattleView

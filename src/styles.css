@@ -91,6 +91,11 @@ input {
   font-weight: 700;
 }
 
+.local-battle-setup {
+  display: grid;
+  gap: 12px;
+}
+
 .barcode-form {
   display: grid;
   gap: 12px;

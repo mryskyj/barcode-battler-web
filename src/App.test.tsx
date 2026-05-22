@@ -42,10 +42,24 @@ describe("App", () => {
 
     await user.click(screen.getByRole("radio", { name: "2人ローカル対戦" }));
 
-    expect(screen.getByText("2人ローカル対戦は次のタスクで実装します")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "生成して戦う" }),
-    ).toBeDisabled();
+    expect(screen.getByLabelText("プレイヤー1のバーコード")).toBeInTheDocument();
+    expect(screen.getByLabelText("プレイヤー2のバーコード")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "プレイヤー1を準備" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "プレイヤー2を準備" })).toBeEnabled();
+  });
+
+  it("keeps local player barcode inputs independent", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("radio", { name: "2人ローカル対戦" }));
+    await user.clear(screen.getByLabelText("プレイヤー1のバーコード"));
+    await user.type(screen.getByLabelText("プレイヤー1のバーコード"), "1234");
+    await user.clear(screen.getByLabelText("プレイヤー2のバーコード"));
+    await user.type(screen.getByLabelText("プレイヤー2のバーコード"), "5678");
+
+    expect(screen.getByLabelText("プレイヤー1のバーコード")).toHaveValue("1234");
+    expect(screen.getByLabelText("プレイヤー2のバーコード")).toHaveValue("5678");
   });
 
   it("keeps primary battle controls available for compact layouts", async () => {
