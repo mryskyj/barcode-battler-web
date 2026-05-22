@@ -10,6 +10,7 @@ const validRoom = {
   host: {
     role: "host",
     clientId: "host-client",
+    displayName: "Alice",
     connected: true,
     character: null,
     ready: false,
@@ -18,6 +19,7 @@ const validRoom = {
   guest: {
     role: "guest",
     clientId: "guest-client",
+    displayName: "Bob",
     connected: true,
     character: {
       id: "guest-character",
@@ -66,6 +68,7 @@ describe("parseFirebaseRoomDocument", () => {
     });
 
     expect(parsed.host.character).toBeNull();
+    expect(parsed.host.displayName).toBe("ホスト");
     expect(parsed.host.selectedCommand).toBeNull();
     expect(parsed.guest).toBeNull();
     expect(parsed.battle.host).toBeNull();
@@ -103,6 +106,8 @@ describe("firebaseRoomDocumentToRemoteBattleRoom", () => {
     );
 
     expect(room.guest?.character?.stats.hp).toBe(120);
+    expect(room.host.displayName).toBe("Alice");
+    expect(room.guest?.displayName).toBe("Bob");
     expect(room.guest?.selectedCommand).toBe("attack");
     expect(room.battle.log).toEqual(["接続完了"]);
   });

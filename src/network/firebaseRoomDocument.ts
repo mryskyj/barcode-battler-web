@@ -29,6 +29,7 @@ export type FirebaseCombatantDocument = {
 export type FirebaseParticipantDocument = {
   role: RemoteBattleRole;
   clientId: string;
+  displayName?: string;
   connected: boolean;
   character: FirebaseCharacterDocument | null;
   ready: boolean;

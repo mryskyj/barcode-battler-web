@@ -17,6 +17,7 @@ export type RemoteBattleWinner = RemoteBattleRole | "draw";
 export type RemoteBattleParticipant = {
   role: RemoteBattleRole;
   clientId: string;
+  displayName: string;
   connected: boolean;
   character: Character | null;
   ready: boolean;
@@ -44,11 +45,12 @@ export function createRemoteBattleRoom(
   roomId: string,
   hostClientId: string,
   now: number,
+  hostDisplayName = "ホスト",
 ): RemoteBattleRoom {
   return {
     roomId,
     status: "waiting",
-    host: createParticipant("host", hostClientId),
+    host: createParticipant("host", hostClientId, hostDisplayName),
     guest: null,
     battle: createInitialBattleSnapshot(),
     updatedAt: now,
@@ -70,6 +72,7 @@ export function joinRemoteBattleRoom(
   room: RemoteBattleRoom,
   guestClientId: string,
   now: number,
+  guestDisplayName = "ゲスト",
 ): RemoteBattleRoom {
   if (!canJoinRemoteBattleRoom(room, guestClientId)) {
     return room;
@@ -78,7 +81,7 @@ export function joinRemoteBattleRoom(
   return {
     ...room,
     status: "ready",
-    guest: createParticipant("guest", guestClientId),
+    guest: createParticipant("guest", guestClientId, guestDisplayName),
     updatedAt: now,
   };
 }
@@ -232,10 +235,12 @@ function clearRemoteBattleGuarding(
 function createParticipant(
   role: RemoteBattleRole,
   clientId: string,
+  displayName: string,
 ): RemoteBattleParticipant {
   return {
     role,
     clientId,
+    displayName,
     connected: true,
     character: null,
     ready: false,

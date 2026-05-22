@@ -1,11 +1,22 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
-import { createRemoteBattleRoom, type RemoteBattleRoom } from "./domain/remoteBattle";
+import type { RankingEntry } from "./domain/ranking";
+import {
+  createRemoteBattleRoom,
+  joinRemoteBattleRoom,
+  type RemoteBattleRoom,
+} from "./domain/remoteBattle";
+import { firebaseRoomDocumentToRemoteBattleRoom } from "./network/firebaseRoomParser";
+import type { FirebaseRankingRepository } from "./network/firebaseRankingRepository";
 import type { FirebaseRoomRepository } from "./network/firebaseRoomRepository";
 
 describe("App", () => {
+  beforeEach(() => {
+    globalThis.localStorage.clear();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -18,139 +29,101 @@ describe("App", () => {
     ).toBeInTheDocument();
   });
 
-  it("starts a CPU battle from a barcode", async () => {
+  it("shows remote battle controls as the primary flow", () => {
+    render(<App />);
+
+    expect(screen.getByRole("region", { name: "プロフィール" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "部屋を作る" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "部屋に参加する" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "ランキングを見る" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "部屋を作る" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "参加する" })).toBeDisabled();
+    expect(screen.getByText("通信対戦の前にユーザー名を保存してください")).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "CPU戦" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "2人ローカル対戦" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "通信対戦" })).not.toBeInTheDocument();
+  });
+
+  it("saves and updates the player display name", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("button", { name: "生成して戦う" }));
+    await user.type(screen.getByLabelText("ユーザー名"), " Alice ");
+    await user.click(screen.getByRole("button", { name: "ユーザー名を保存" }));
 
-    expect(
-      screen.getByRole("region", { name: "プレイヤー" }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "敵" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "たたかう" })).toBeInTheDocument();
-  });
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(globalThis.localStorage.getItem("barcodeBattler.playerProfile")).toContain(
+      "\"displayName\":\"Alice\"",
+    );
 
-  it("shows a battle mode selector", () => {
-    render(<App />);
+    await user.clear(screen.getByLabelText("ユーザー名"));
+    await user.type(screen.getByLabelText("ユーザー名"), "Bob");
+    await user.click(screen.getByRole("button", { name: "変更を保存" }));
 
-    expect(screen.getByRole("radio", { name: "CPU戦" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "2人ローカル対戦" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "通信対戦" })).toBeInTheDocument();
-  });
-
-  it("shows local battle setup and keeps the start button locked until both players are ready", async () => {
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("radio", { name: "2人ローカル対戦" }));
-
-    expect(screen.getByLabelText("プレイヤー1のバーコード")).toBeInTheDocument();
-    expect(screen.getByLabelText("プレイヤー2のバーコード")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "プレイヤー1を準備" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "プレイヤー2を準備" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "対戦を始める" })).toBeDisabled();
-  });
-
-  it("keeps local player barcode inputs independent", async () => {
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("radio", { name: "2人ローカル対戦" }));
-    await user.clear(screen.getByLabelText("プレイヤー1のバーコード"));
-    await user.type(screen.getByLabelText("プレイヤー1のバーコード"), "1234");
-    await user.clear(screen.getByLabelText("プレイヤー2のバーコード"));
-    await user.type(screen.getByLabelText("プレイヤー2のバーコード"), "5678");
-
-    expect(screen.getByLabelText("プレイヤー1のバーコード")).toHaveValue("1234");
-    expect(screen.getByLabelText("プレイヤー2のバーコード")).toHaveValue("5678");
-  });
-
-  it("starts a local battle after both players are prepared", async () => {
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("radio", { name: "2人ローカル対戦" }));
-    await user.click(screen.getByRole("button", { name: "プレイヤー1を準備" }));
-    await user.click(screen.getByRole("button", { name: "プレイヤー2を準備" }));
-    await user.click(screen.getByRole("button", { name: "対戦を始める" }));
-
-    expect(
-      screen.getByRole("region", { name: "プレイヤー1" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("region", { name: "プレイヤー2" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("プレイヤー1の選択")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "たたかう" })).toBeEnabled();
-  });
-
-  it("advances local battle turns after both players choose commands", async () => {
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("radio", { name: "2人ローカル対戦" }));
-    await user.click(screen.getByRole("button", { name: "プレイヤー1を準備" }));
-    await user.click(screen.getByRole("button", { name: "プレイヤー2を準備" }));
-    await user.click(screen.getByRole("button", { name: "対戦を始める" }));
-
-    await user.click(screen.getByRole("button", { name: "たたかう" }));
-
-    expect(screen.getByText("プレイヤー2の選択")).toBeInTheDocument();
-    expect(screen.getByText("プレイヤー1は選択済み")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "ためる" }));
-
-    expect(screen.getByText("プレイヤー1の選択")).toBeInTheDocument();
-    expect(screen.getByText(/プレイヤー1の「たたかう」/)).toBeInTheDocument();
-    expect(screen.getByText(/プレイヤー2は「ためる」/)).toBeInTheDocument();
-  });
-
-  it("does not reveal the first local command before the second player selects", async () => {
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("radio", { name: "2人ローカル対戦" }));
-    await user.click(screen.getByRole("button", { name: "プレイヤー1を準備" }));
-    await user.click(screen.getByRole("button", { name: "プレイヤー2を準備" }));
-    await user.click(screen.getByRole("button", { name: "対戦を始める" }));
-    await user.click(screen.getByRole("button", { name: "必殺" }));
-
-    const battleLog = screen.getByRole("region", { name: "戦闘ログ" });
-    expect(within(battleLog).getByText("プレイヤー1はコマンドを選択した")).toBeInTheDocument();
-    expect(within(battleLog).queryByText(/プレイヤー1.*必殺/)).not.toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
   it("shows remote battle room creation and join controls", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole("radio", { name: "通信対戦" }));
+    await saveDisplayName(user, "Alice");
 
     expect(screen.getByRole("region", { name: "部屋を作る" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "部屋に参加する" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "部屋を作る" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "参加する" })).toBeDisabled();
+  });
+
+  it("shows rankings from Firebase", async () => {
+    const user = userEvent.setup();
+    render(
+      <App
+        rankingRepository={createTestRankingRepository([
+          createRankingEntry({ profileKey: "alice", displayName: "Alice", wins: 3 }),
+          createRankingEntry({ profileKey: "bob", displayName: "Bob", wins: 1 }),
+        ])}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "ランキングを見る" }));
+
+    expect(await screen.findByRole("region", { name: "ランキング" })).toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("3勝")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
   it("shows remote character setup after creating a room", async () => {
     const user = userEvent.setup();
     render(<App remoteRepository={createTestRemoteRepository()} />);
 
-    await user.click(screen.getByRole("radio", { name: "通信対戦" }));
+    await saveDisplayName(user, "Alice");
     await user.click(screen.getByRole("button", { name: "部屋を作る" }));
 
     expect(await screen.findByText("ホストとして参加中")).toBeInTheDocument();
+    expect(screen.getByText("自分: Alice / 相手: ゲスト")).toBeInTheDocument();
     expect(screen.getByText("相手待ち")).toBeInTheDocument();
     expect(screen.getByText("ゲストの参加待ち")).toBeInTheDocument();
     expect(screen.getByLabelText("自分のバーコード")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "キャラクター準備" })).toBeEnabled();
   });
 
+  it("shows room creation errors in the lobby", async () => {
+    const user = userEvent.setup();
+    render(<App remoteRepository={createFailingRemoteRepository()} />);
+
+    await saveDisplayName(user, "Alice");
+    await user.click(screen.getByRole("button", { name: "部屋を作る" }));
+
+    expect(await screen.findByText("permission denied")).toBeInTheDocument();
+  });
+
   it("marks the remote character as ready", async () => {
     const user = userEvent.setup();
     render(<App remoteRepository={createTestRemoteRepository()} />);
 
-    await user.click(screen.getByRole("radio", { name: "通信対戦" }));
+    await saveDisplayName(user, "Alice");
     await user.click(screen.getByRole("button", { name: "部屋を作る" }));
     await user.click(await screen.findByRole("button", { name: "キャラクター準備" }));
 
@@ -163,7 +136,7 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App remoteRepository={createTestRemoteRepository()} />);
 
-    await user.click(screen.getByRole("radio", { name: "通信対戦" }));
+    await saveDisplayName(user, "Alice");
     await user.click(screen.getByRole("button", { name: "部屋を作る" }));
     await user.click(await screen.findByRole("button", { name: "退出して戻る" }));
 
@@ -174,7 +147,7 @@ describe("App", () => {
     const user = userEvent.setup();
     render(<App remoteRepository={createTestRemoteRepository()} />);
 
-    await user.click(screen.getByRole("radio", { name: "通信対戦" }));
+    await saveDisplayName(user, "Alice");
     await user.click(screen.getByRole("button", { name: "部屋を作る" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("相手待ち");
@@ -187,111 +160,48 @@ describe("App", () => {
     render(
       <App
         remoteRepository={createTestRemoteRepository([
-          createRemoteBattleRoom("AB12CD", "host-client", 1000),
+          createRemoteBattleRoom("AB12CD", "host-client", 1000, "Alice"),
         ])}
       />,
     );
 
-    await user.click(screen.getByRole("radio", { name: "通信対戦" }));
+    await saveDisplayName(user, "Bob");
     await user.type(screen.getByLabelText("部屋ID"), " ab12cd ");
     await user.click(screen.getByRole("button", { name: "参加する" }));
 
     expect(await screen.findByText("AB12CD")).toBeInTheDocument();
     expect(screen.getByText("ゲストとして参加中")).toBeInTheDocument();
+    expect(screen.getByText("自分: Bob / 相手: Alice")).toBeInTheDocument();
   });
 
-  it("keeps primary battle controls available for compact layouts", async () => {
+  it("shows remote barcode validation while preparing a character", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<App remoteRepository={createTestRemoteRepository()} />);
 
-    await user.click(screen.getByRole("button", { name: "生成して戦う" }));
-
-    for (const command of ["たたかう", "ためる", "まもる", "必殺"]) {
-      expect(screen.getByRole("button", { name: command })).toBeEnabled();
-    }
-    expect(screen.getByRole("region", { name: "戦闘ログ" })).toBeInTheDocument();
-  });
-
-  it("disables battle start while barcode is empty", async () => {
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.clear(screen.getByLabelText("バーコード"));
-
-    expect(
-      screen.getByRole("button", { name: "生成して戦う" }),
-    ).toBeDisabled();
-    expect(screen.getByText("バーコードを入力してください")).toBeInTheDocument();
-  });
-
-  it("shows a warning while barcode is too short", async () => {
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.clear(screen.getByLabelText("バーコード"));
-    await user.type(screen.getByLabelText("バーコード"), "123");
+    await saveDisplayName(user, "Alice");
+    await user.click(screen.getByRole("button", { name: "部屋を作る" }));
+    await user.clear(await screen.findByLabelText("自分のバーコード"));
+    await user.type(screen.getByLabelText("自分のバーコード"), "123");
 
     expect(screen.getByText("4文字以上で入力してください")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "キャラクター準備" })).toBeDisabled();
+  });
+
+  it("shows an error when ranking result saving fails", async () => {
+    const user = userEvent.setup();
+    render(
+      <App
+        remoteRepository={createFinishedOnSubscribeRepository()}
+        rankingRepository={createFailingRankingRepository()}
+      />,
+    );
+
+    await saveDisplayName(user, "Alice");
+    await user.click(screen.getByRole("button", { name: "部屋を作る" }));
+
     expect(
-      screen.getByRole("button", { name: "生成して戦う" }),
-    ).toBeDisabled();
-  });
-
-  it("updates the battle log after a command", async () => {
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("button", { name: "生成して戦う" }));
-    await user.click(screen.getByRole("button", { name: "たたかう" }));
-
-    expect(screen.getByText(/プレイヤーの「たたかう」/)).toBeInTheDocument();
-  });
-
-  it("can rematch with the same barcode after a battle result", async () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.5);
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.clear(screen.getByLabelText("バーコード"));
-    await user.type(screen.getByLabelText("バーコード"), "9999999999999");
-    await user.click(screen.getByRole("button", { name: "生成して戦う" }));
-
-    for (let i = 0; i < 40; i += 1) {
-      const attackButton = screen.queryByRole("button", { name: "たたかう" });
-      if (attackButton === null) {
-        break;
-      }
-      await user.click(attackButton);
-    }
-
-    expect(screen.getByRole("button", { name: "同じバーコードで再戦" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "同じバーコードで再戦" }));
-
-    expect(screen.getByRole("button", { name: "たたかう" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "同じバーコードで再戦" })).not.toBeInTheDocument();
-  });
-
-  it("can return to barcode input after a battle result", async () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.5);
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.clear(screen.getByLabelText("バーコード"));
-    await user.type(screen.getByLabelText("バーコード"), "9999999999999");
-    await user.click(screen.getByRole("button", { name: "生成して戦う" }));
-
-    for (let i = 0; i < 40; i += 1) {
-      const attackButton = screen.queryByRole("button", { name: "たたかう" });
-      if (attackButton === null) {
-        break;
-      }
-      await user.click(attackButton);
-    }
-
-    await user.click(screen.getByRole("button", { name: "入力へ戻る" }));
-
-    expect(screen.getByLabelText("バーコード")).toHaveValue("9999999999999");
+      await screen.findByText("ランキング保存に失敗しました: network down"),
+    ).toBeInTheDocument();
   });
 });
 
@@ -311,7 +221,7 @@ function createTestRemoteRepository(
 
   return {
     async createRoom(room) {
-      rooms.set(room.roomId, room);
+      rooms.set(room.roomId, firebaseRoomDocumentToRemoteBattleRoom(room));
       notify(room.roomId);
     },
     async getRoom(roomId) {
@@ -345,6 +255,34 @@ function createTestRemoteRepository(
   };
 }
 
+function createFailingRemoteRepository(): FirebaseRoomRepository {
+  return {
+    async createRoom() {
+      throw new Error("permission denied");
+    },
+    async getRoom() {
+      return null;
+    },
+    subscribeRoom() {
+      return () => undefined;
+    },
+    async updateRoom() {
+      return undefined;
+    },
+    async removeRoom() {
+      return undefined;
+    },
+  };
+}
+
+async function saveDisplayName(
+  user: ReturnType<typeof userEvent.setup>,
+  displayName: string,
+) {
+  await user.type(screen.getByLabelText("ユーザー名"), displayName);
+  await user.click(screen.getByRole("button", { name: "ユーザー名を保存" }));
+}
+
 function applyFirebaseUpdate(
   room: RemoteBattleRoom,
   values: Record<string, unknown>,
@@ -363,4 +301,103 @@ function applyFirebaseUpdate(
   }
 
   return nextRoom as RemoteBattleRoom;
+}
+
+function createTestRankingRepository(
+  initialEntries: RankingEntry[] = [],
+): FirebaseRankingRepository {
+  const entries = new Map<string, RankingEntry>(
+    initialEntries.map((entry) => [entry.profileKey, entry]),
+  );
+
+  return {
+    async getRankingEntries() {
+      return [...entries.values()];
+    },
+    async updateBattleResult(profileKey, displayName, result, now) {
+      const currentEntry = entries.get(profileKey) ?? createRankingEntry({
+        profileKey,
+        displayName,
+        wins: 0,
+        losses: 0,
+        battles: 0,
+        lastPlayedAt: 0,
+        updatedAt: 0,
+      });
+      const nextEntry = {
+        ...currentEntry,
+        displayName,
+        wins: currentEntry.wins + (result === "win" ? 1 : 0),
+        losses: currentEntry.losses + (result === "loss" ? 1 : 0),
+        battles: currentEntry.battles + 1,
+        lastPlayedAt: now,
+        updatedAt: now,
+      };
+      entries.set(profileKey, nextEntry);
+      return nextEntry;
+    },
+  };
+}
+
+function createFailingRankingRepository(): FirebaseRankingRepository {
+  return {
+    async getRankingEntries() {
+      return [];
+    },
+    async updateBattleResult() {
+      throw new Error("network down");
+    },
+  };
+}
+
+function createFinishedOnSubscribeRepository(): FirebaseRoomRepository {
+  let room: RemoteBattleRoom | null = null;
+
+  return {
+    async createRoom(nextRoom) {
+      const createdRoom = firebaseRoomDocumentToRemoteBattleRoom(nextRoom);
+      const joinedRoom = joinRemoteBattleRoom(
+        createdRoom,
+        "guest-client",
+        createdRoom.updatedAt + 1,
+        "Bob",
+      );
+      room = {
+        ...joinedRoom,
+        status: "finished",
+        battle: {
+          ...joinedRoom.battle,
+          round: 1,
+          winner: "host",
+          log: ["Aliceの勝利。バトル終了"],
+        },
+      };
+    },
+    async getRoom() {
+      return room;
+    },
+    subscribeRoom(_roomId, onRoom) {
+      onRoom(room);
+      return () => undefined;
+    },
+    async updateRoom() {
+      return undefined;
+    },
+    async removeRoom() {
+      room = null;
+    },
+  };
+}
+
+function createRankingEntry(overrides: Partial<RankingEntry> = {}): RankingEntry {
+  return {
+    profileKey: "profile-key",
+    displayName: "Alice",
+    wins: 1,
+    losses: 0,
+    battles: 1,
+    lastPlayedAt: 1000,
+    updatedAt: 1000,
+    ...overrides,
+  };
 }

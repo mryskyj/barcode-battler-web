@@ -10,7 +10,7 @@ import type { Character } from "./character";
 
 describe("createRemoteBattleRoom", () => {
   it("creates a waiting room with a connected host", () => {
-    const room = createRemoteBattleRoom("ABCD12", "host-client", 1000);
+    const room = createRemoteBattleRoom("ABCD12", "host-client", 1000, "Alice");
 
     expect(room).toMatchObject({
       roomId: "ABCD12",
@@ -18,6 +18,7 @@ describe("createRemoteBattleRoom", () => {
       host: {
         role: "host",
         clientId: "host-client",
+        displayName: "Alice",
         connected: true,
         character: null,
         ready: false,
@@ -48,6 +49,7 @@ describe("canJoinRemoteBattleRoom", () => {
       createRemoteBattleRoom("ABCD12", "host-client", 1000),
       "guest-client",
       2000,
+      "Bob",
     );
 
     expect(canJoinRemoteBattleRoom(room, "other-client")).toBe(false);
@@ -60,12 +62,14 @@ describe("joinRemoteBattleRoom", () => {
       createRemoteBattleRoom("ABCD12", "host-client", 1000),
       "guest-client",
       2000,
+      "Bob",
     );
 
     expect(room.status).toBe("ready");
     expect(room.guest).toMatchObject({
       role: "guest",
       clientId: "guest-client",
+      displayName: "Bob",
       connected: true,
     });
     expect(room.updatedAt).toBe(2000);

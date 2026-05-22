@@ -1,28 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BarcodeForm } from "./components/BarcodeForm";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BattleLog } from "./components/BattleLog";
-import { BattleModeSelector } from "./components/BattleModeSelector";
 import { CommandButtons } from "./components/CommandButtons";
 import { CombatantPanel } from "./components/CombatantPanel";
-import { LocalBattleSetup } from "./components/LocalBattleSetup";
-import { LocalBattleView } from "./components/LocalBattleView";
+import { PlayerProfileForm } from "./components/PlayerProfileForm";
+import { RankingBoard } from "./components/RankingBoard";
 import { RemoteBattleLobby } from "./components/RemoteBattleLobby";
 import { RemoteBattleSetup } from "./components/RemoteBattleSetup";
 import {
-  createBattle,
-  executeTurn,
   type BattleCommand,
   type Combatant,
-  type BattleState,
 } from "./domain/battle";
-import type { BattleMode } from "./domain/battleMode";
 import { validateBarcodeInput } from "./domain/barcodeValidation";
 import { createCharacter } from "./domain/character";
-import {
-  createLocalBattle,
-  submitLocalBattleCommand,
-  type LocalBattleState,
-} from "./domain/localBattle";
+import type { PlayerProfile } from "./domain/playerProfile";
+import type { RankingBattleResult, RankingEntry } from "./domain/ranking";
 import {
   createRemoteRoomId,
   isValidRemoteRoomId,
@@ -46,12 +37,18 @@ import {
   type RoomSubscription,
 } from "./network/firebaseRoomRepository";
 import {
+  createFirebaseRankingRepository,
+  type FirebaseRankingRepository,
+} from "./network/firebaseRankingRepository";
+import {
   createCharacterReadyUpdate,
   createCommandSelectionUpdate,
   createRemoteBattleStartUpdate,
 } from "./network/firebaseRoomUpdates";
-
-const DEFAULT_ENEMY_BARCODE = "4512345678906";
+import {
+  loadPlayerProfile,
+  savePlayerProfile,
+} from "./storage/playerProfileStorage";
 
 type RemoteSession = {
   roomId: string;
@@ -60,6 +57,7 @@ type RemoteSession = {
 
 type AppProps = {
   remoteRepository?: FirebaseRoomRepository;
+  rankingRepository?: FirebaseRankingRepository;
   remoteClientId?: string;
   now?: () => number;
   random?: () => number;
@@ -67,18 +65,11 @@ type AppProps = {
 
 export function App({
   remoteRepository,
+  rankingRepository,
   remoteClientId,
   now = () => Date.now(),
   random = Math.random,
 }: AppProps = {}) {
-  const [mode, setMode] = useState<BattleMode>("cpu");
-  const [barcode, setBarcode] = useState("4901234567894");
-  const [player1Barcode, setPlayer1Barcode] = useState("4901234567894");
-  const [player2Barcode, setPlayer2Barcode] = useState("4901234567895");
-  const [player1Ready, setPlayer1Ready] = useState(false);
-  const [player2Ready, setPlayer2Ready] = useState(false);
-  const [cpuBattle, setCpuBattle] = useState<BattleState | null>(null);
-  const [localBattle, setLocalBattle] = useState<LocalBattleState | null>(null);
   const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
   const [joiningRoomId, setJoiningRoomId] = useState("");
   const [remoteSession, setRemoteSession] = useState<RemoteSession | null>(null);
@@ -86,19 +77,25 @@ export function App({
   const [remoteError, setRemoteError] = useState<string | null>(null);
   const [remoteBarcode, setRemoteBarcode] = useState("4901234567894");
   const [remoteReady, setRemoteReady] = useState(false);
+  const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(() =>
+    loadPlayerProfile(),
+  );
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [rankingEntries, setRankingEntries] = useState<RankingEntry[]>([]);
+  const [rankingVisible, setRankingVisible] = useState(false);
+  const [rankingLoading, setRankingLoading] = useState(false);
+  const [rankingError, setRankingError] = useState<string | null>(null);
+  const [rankingSaveError, setRankingSaveError] = useState<string | null>(null);
   const remoteSubscriptionRef = useRef<RoomSubscription | null>(null);
+  const savedRankingResultRef = useRef<string | null>(null);
   const remoteRepositoryRef = useRef<FirebaseRoomRepository | null>(
     remoteRepository ?? null,
   );
-  const remoteClientIdRef = useRef(remoteClientId ?? createBrowserClientId());
-  const barcodeValidation = validateBarcodeInput(barcode);
-  const player1BarcodeValidation = validateBarcodeInput(player1Barcode);
-  const player2BarcodeValidation = validateBarcodeInput(player2Barcode);
-  const remoteBarcodeValidation = validateBarcodeInput(remoteBarcode);
-  const enemy = useMemo(
-    () => createCharacter(DEFAULT_ENEMY_BARCODE, "CPU"),
-    [],
+  const rankingRepositoryRef = useRef<FirebaseRankingRepository | null>(
+    rankingRepository ?? null,
   );
+  const remoteClientIdRef = useRef(remoteClientId ?? createBrowserClientId());
+  const remoteBarcodeValidation = validateBarcodeInput(remoteBarcode);
 
   const getRemoteRepository = useCallback(() => {
     if (remoteRepositoryRef.current === null) {
@@ -109,6 +106,33 @@ export function App({
 
     return remoteRepositoryRef.current;
   }, []);
+
+  const getRankingRepository = useCallback(() => {
+    if (rankingRepositoryRef.current === null) {
+      rankingRepositoryRef.current = createFirebaseRankingRepository(
+        createFirebaseClient().database,
+      );
+    }
+
+    return rankingRepositoryRef.current;
+  }, []);
+
+  const saveRankingResult = useCallback(
+    async (profile: PlayerProfile, result: RankingBattleResult) => {
+      try {
+        setRankingSaveError(null);
+        await getRankingRepository().updateBattleResult(
+          profile.profileKey,
+          profile.displayName,
+          result,
+          now(),
+        );
+      } catch (error) {
+        setRankingSaveError(`ランキング保存に失敗しました: ${getErrorMessage(error)}`);
+      }
+    },
+    [getRankingRepository, now],
+  );
 
   const updateRemoteRoom = useCallback(
     async (values: Record<string, unknown>) => {
@@ -155,76 +179,51 @@ export function App({
     void updateRemoteRoom(remoteRoomToFirebaseDocument(resolvedRoom));
   }, [remoteRoom, remoteSession, random, now, updateRemoteRoom]);
 
-  function startBattle() {
-    if (mode !== "cpu" || !barcodeValidation.isValid) {
-      return;
-    }
-
-    const player = createCharacter(
-      barcodeValidation.normalizedBarcode,
-      "プレイヤー",
-    );
-    setBarcode(barcodeValidation.normalizedBarcode);
-    setLocalBattle(null);
-    setCpuBattle(createBattle(player, enemy));
-  }
-
-  function startLocalBattle() {
+  useEffect(() => {
     if (
-      mode !== "local" ||
-      !player1Ready ||
-      !player2Ready ||
-      !player1BarcodeValidation.isValid ||
-      !player2BarcodeValidation.isValid
+      remoteSession === null ||
+      remoteRoom === null ||
+      remoteRoom.status !== "finished" ||
+      remoteRoom.battle.winner === null ||
+      playerProfile === null
     ) {
       return;
     }
 
-    const player1 = createCharacter(
-      player1BarcodeValidation.normalizedBarcode,
-      "プレイヤー1",
+    const resultKey = [
+      remoteRoom.roomId,
+      remoteRoom.battle.round,
+      remoteSession.role,
+      remoteRoom.battle.winner,
+    ].join(":");
+
+    if (savedRankingResultRef.current === resultKey) {
+      return;
+    }
+
+    savedRankingResultRef.current = resultKey;
+    const rankingResult = getRankingBattleResult(
+      remoteSession.role,
+      remoteRoom.battle.winner,
     );
-    const player2 = createCharacter(
-      player2BarcodeValidation.normalizedBarcode,
-      "プレイヤー2",
-    );
-    setPlayer1Barcode(player1BarcodeValidation.normalizedBarcode);
-    setPlayer2Barcode(player2BarcodeValidation.normalizedBarcode);
-    setCpuBattle(null);
-    setLocalBattle(createLocalBattle(player1, player2));
-  }
 
-  function handleCommand(command: BattleCommand) {
-    setCpuBattle((current) =>
-      current === null ? current : executeTurn(current, command),
-    );
-  }
-
-  function handleLocalCommand(command: BattleCommand) {
-    setLocalBattle((current) =>
-      current === null ? current : submitLocalBattleCommand(current, command),
-    );
-  }
-
-  function resetBattle() {
-    setCpuBattle(null);
-    setLocalBattle(null);
-  }
-
-  function changePlayer1Barcode(nextBarcode: string) {
-    setPlayer1Barcode(nextBarcode);
-    setPlayer1Ready(false);
-  }
-
-  function changePlayer2Barcode(nextBarcode: string) {
-    setPlayer2Barcode(nextBarcode);
-    setPlayer2Ready(false);
-  }
+    void saveRankingResult(playerProfile, rankingResult);
+  }, [playerProfile, remoteRoom, remoteSession, saveRankingResult]);
 
   async function createRemoteRoom() {
+    if (playerProfile === null) {
+      setProfileError("通信対戦の前にユーザー名を保存してください");
+      return;
+    }
+
     const roomId = createRemoteRoomId();
     const nextSession = { roomId, role: "host" as const };
-    const room = createRemoteBattleRoom(roomId, remoteClientIdRef.current, now());
+    const room = createRemoteBattleRoom(
+      roomId,
+      remoteClientIdRef.current,
+      now(),
+      playerProfile.displayName,
+    );
 
     try {
       setRemoteError(null);
@@ -239,6 +238,11 @@ export function App({
   }
 
   async function joinRemoteRoom() {
+    if (playerProfile === null) {
+      setProfileError("通信対戦の前にユーザー名を保存してください");
+      return;
+    }
+
     if (!isValidRemoteRoomId(joiningRoomId)) {
       return;
     }
@@ -264,6 +268,7 @@ export function App({
         room,
         remoteClientIdRef.current,
         now(),
+        playerProfile.displayName,
       );
       await getRemoteRepository().updateRoom(
         roomId,
@@ -312,6 +317,8 @@ export function App({
     setRemoteRoom(null);
     setRemoteError(null);
     setRemoteReady(false);
+    setRankingSaveError(null);
+    savedRankingResultRef.current = null;
   }
 
   async function handleRemoteCommand(command: BattleCommand) {
@@ -349,6 +356,30 @@ export function App({
     );
   }
 
+  function handleProfileSave(displayName: string) {
+    try {
+      const profile = savePlayerProfile(displayName);
+      setPlayerProfile(profile);
+      setProfileError(null);
+    } catch (error) {
+      setProfileError(getErrorMessage(error));
+    }
+  }
+
+  async function showRanking() {
+    setRankingVisible(true);
+    setRankingLoading(true);
+    setRankingError(null);
+
+    try {
+      setRankingEntries(await getRankingRepository().getRankingEntries());
+    } catch (error) {
+      setRankingError(getErrorMessage(error));
+    } finally {
+      setRankingLoading(false);
+    }
+  }
+
   return (
     <main className="app-shell">
       <header className="app-header">
@@ -362,139 +393,73 @@ export function App({
           room={remoteRoom}
           role={remoteSession.role}
           errorMessage={remoteError}
+          rankingErrorMessage={rankingSaveError}
           onCommand={handleRemoteCommand}
           onBackToSetup={backToRemoteLobby}
         />
-      ) : cpuBattle === null && localBattle === null ? (
+      ) : (
         <section className="setup-panel" aria-label="キャラクター生成">
-          <BattleModeSelector value={mode} onChange={setMode} />
-          {mode === "cpu" ? (
-            <BarcodeForm
-              barcode={barcode}
-              errorMessage={barcodeValidation.message}
-              canSubmit={barcodeValidation.isValid}
-              onBarcodeChange={setBarcode}
-              onSubmit={startBattle}
-            />
-          ) : mode === "local" ? (
-            <LocalBattleSetup
-              player1Barcode={player1Barcode}
-              player1ErrorMessage={player1BarcodeValidation.message}
-              player1CanSubmit={player1BarcodeValidation.isValid}
-              player1Ready={player1Ready}
-              player2Barcode={player2Barcode}
-              player2ErrorMessage={player2BarcodeValidation.message}
-              player2CanSubmit={player2BarcodeValidation.isValid}
-              player2Ready={player2Ready}
-              onPlayer1BarcodeChange={changePlayer1Barcode}
-              onPlayer2BarcodeChange={changePlayer2Barcode}
-              onPlayer1Submit={() => setPlayer1Ready(true)}
-              onPlayer2Submit={() => setPlayer2Ready(true)}
-              canStart={
-                player1Ready &&
-                player2Ready &&
-                player1BarcodeValidation.isValid &&
-                player2BarcodeValidation.isValid
+          <PlayerProfileForm
+            profile={playerProfile}
+            storageErrorMessage={profileError}
+            onSave={handleProfileSave}
+          />
+          {remoteSession === null ? (
+            <RemoteBattleLobby
+              createdRoomId={createdRoomId}
+              joiningRoomId={joiningRoomId}
+              canJoin={isValidRemoteRoomId(joiningRoomId)}
+              canUseRemoteBattle={playerProfile !== null}
+              disabledMessage={
+                playerProfile === null
+                  ? "通信対戦の前にユーザー名を保存してください"
+                  : null
               }
-              onStart={startLocalBattle}
+              errorMessage={remoteError}
+              onCreateRoom={createRemoteRoom}
+              onJoiningRoomIdChange={setJoiningRoomId}
+              onJoinRoom={joinRemoteRoom}
+              onShowRanking={showRanking}
             />
           ) : (
-            <>
-              {remoteSession === null ? (
-                <RemoteBattleLobby
-                  createdRoomId={createdRoomId}
-                  joiningRoomId={joiningRoomId}
-                  canJoin={isValidRemoteRoomId(joiningRoomId)}
-                  onCreateRoom={createRemoteRoom}
-                  onJoiningRoomIdChange={setJoiningRoomId}
-                  onJoinRoom={joinRemoteRoom}
-                />
-              ) : (
-                <RemoteBattleSetup
-                  roomId={remoteSession.roomId}
-                  role={remoteSession.role}
-                  barcode={remoteBarcode}
-                  errorMessage={remoteBarcodeValidation.message}
-                  connectionLabel={getRemoteConnectionLabel(remoteRoom, remoteError)}
-                  statusText={getRemoteStatusText(
-                    remoteSession.role,
-                    remoteRoom,
-                    remoteReady,
-                    remoteError,
-                  )}
-                  canSubmit={remoteBarcodeValidation.isValid}
-                  ready={remoteReady}
-                  onBarcodeChange={changeRemoteBarcode}
-                  onSubmit={prepareRemoteCharacter}
-                  onBackToLobby={backToRemoteLobby}
-                />
+            <RemoteBattleSetup
+              roomId={remoteSession.roomId}
+              role={remoteSession.role}
+              displayName={getRemoteParticipantDisplayName(
+                remoteRoom,
+                remoteSession.role,
               )}
-            </>
+              opponentDisplayName={getRemoteParticipantDisplayName(
+                remoteRoom,
+                remoteSession.role === "host" ? "guest" : "host",
+              )}
+              barcode={remoteBarcode}
+              errorMessage={remoteBarcodeValidation.message}
+              connectionLabel={getRemoteConnectionLabel(remoteRoom, remoteError)}
+              statusText={getRemoteStatusText(
+                remoteSession.role,
+                remoteRoom,
+                remoteReady,
+                remoteError,
+              )}
+              canSubmit={remoteBarcodeValidation.isValid}
+              ready={remoteReady}
+              onBarcodeChange={changeRemoteBarcode}
+              onSubmit={prepareRemoteCharacter}
+              onBackToLobby={backToRemoteLobby}
+            />
           )}
+          {rankingVisible ? (
+            <RankingBoard
+              entries={rankingEntries}
+              loading={rankingLoading}
+              errorMessage={rankingError}
+              onRefresh={showRanking}
+            />
+          ) : null}
         </section>
-      ) : cpuBattle !== null ? (
-        <BattleView
-          battle={cpuBattle}
-          onCommand={handleCommand}
-          onRematch={startBattle}
-          onBackToSetup={resetBattle}
-        />
-      ) : localBattle !== null ? (
-        <LocalBattleView
-          battle={localBattle}
-          onCommand={handleLocalCommand}
-          onBackToSetup={resetBattle}
-        />
-      ) : null}
+      )}
     </main>
-  );
-}
-
-function BattleView({
-  battle,
-  onCommand,
-  onRematch,
-  onBackToSetup,
-}: {
-  battle: BattleState;
-  onCommand: (command: BattleCommand) => void;
-  onRematch: () => void;
-  onBackToSetup: () => void;
-}) {
-  const winnerText =
-    battle.winner === null
-      ? null
-      : battle.winner === "player"
-        ? "勝利"
-        : "敗北";
-
-  return (
-    <div className="battle-layout">
-      <div className="combatants-grid">
-        <CombatantPanel title="プレイヤー" combatant={battle.player} />
-        <CombatantPanel title="敵" combatant={battle.enemy} />
-      </div>
-
-      <section className="control-panel" aria-label="バトル操作">
-        {winnerText === null ? (
-          <CommandButtons disabled={false} onCommand={onCommand} />
-        ) : (
-          <div className="result-panel">
-            <strong>{winnerText}</strong>
-            <div className="result-actions">
-              <button type="button" onClick={onRematch}>
-                同じバーコードで再戦
-              </button>
-              <button type="button" className="secondary-button" onClick={onBackToSetup}>
-                入力へ戻る
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
-
-      <BattleLog entries={battle.log} />
-    </div>
   );
 }
 
@@ -502,12 +467,14 @@ function RemoteBattleView({
   room,
   role,
   errorMessage,
+  rankingErrorMessage,
   onCommand,
   onBackToSetup,
 }: {
   room: RemoteBattleRoom;
   role: RemoteBattleRole;
   errorMessage: string | null;
+  rankingErrorMessage: string | null;
   onCommand: (command: BattleCommand) => void;
   onBackToSetup: () => void;
 }) {
@@ -528,16 +495,22 @@ function RemoteBattleView({
     <div className="battle-layout">
       <div className="combatants-grid">
         {hostCombatant === null ? null : (
-          <CombatantPanel title="ホスト" combatant={hostCombatant} />
+          <CombatantPanel title={room.host.displayName} combatant={hostCombatant} />
         )}
         {guestCombatant === null ? null : (
-          <CombatantPanel title="ゲスト" combatant={guestCombatant} />
+          <CombatantPanel
+            title={room.guest?.displayName ?? "ゲスト"}
+            combatant={guestCombatant}
+          />
         )}
       </div>
 
       <section className="control-panel" aria-label="通信対戦操作">
         {errorMessage === null ? null : (
           <p className="error-message">{errorMessage}</p>
+        )}
+        {rankingErrorMessage === null ? null : (
+          <p className="field-error">{rankingErrorMessage}</p>
         )}
         {winnerText === null ? (
           <>
@@ -595,6 +568,26 @@ function getRemoteCombatant(
     charged: false,
     guarding: false,
   };
+}
+
+function getRemoteParticipantDisplayName(
+  room: RemoteBattleRoom | null,
+  role: RemoteBattleRole,
+): string {
+  const participant = role === "host" ? room?.host : room?.guest;
+
+  return participant?.displayName ?? (role === "host" ? "ホスト" : "ゲスト");
+}
+
+function getRankingBattleResult(
+  role: RemoteBattleRole,
+  winner: RemoteBattleRoom["battle"]["winner"],
+): RankingBattleResult {
+  if (winner === "draw") {
+    return "draw";
+  }
+
+  return winner === role ? "win" : "loss";
 }
 
 function getRemoteConnectionLabel(

@@ -2,9 +2,11 @@ import type { Combatant } from "../domain/battleTypes";
 import type { Character, CharacterStats } from "../domain/character";
 import type {
   RemoteBattleParticipant,
+  RemoteBattleRole,
   RemoteBattleRoom,
   RemoteBattleSnapshot,
 } from "../domain/remoteBattle";
+import { validatePlayerDisplayName } from "../domain/playerProfile";
 import type {
   FirebaseBattleDocument,
   FirebaseCharacterDocument,
@@ -58,6 +60,7 @@ function parseParticipantDocument(
   return {
     role: requireOneOf(object.role, REMOTE_ROLES, `${path}.role`),
     clientId: requireString(object.clientId, `${path}.clientId`),
+    displayName: parseDisplayName(object.displayName, path),
     connected: requireBoolean(object.connected, `${path}.connected`),
     character: isMissingNullable(object.character)
       ? null
@@ -134,12 +137,37 @@ function participantDocumentToRemoteParticipant(
   return {
     role: document.role,
     clientId: document.clientId,
+    displayName: document.displayName ?? getFallbackDisplayName(document.role),
     connected: document.connected,
     character:
       document.character === null ? null : characterDocumentToCharacter(document.character),
     ready: document.ready,
     selectedCommand: document.selectedCommand,
   };
+}
+
+function parseDisplayName(value: unknown, path: string): string {
+  if (isMissingNullable(value)) {
+    return getFallbackDisplayNameFromPath(path);
+  }
+
+  if (typeof value !== "string") {
+    return getFallbackDisplayNameFromPath(path);
+  }
+
+  const validation = validatePlayerDisplayName(value);
+
+  return validation.isValid
+    ? validation.displayName
+    : getFallbackDisplayNameFromPath(path);
+}
+
+function getFallbackDisplayName(role: RemoteBattleRole): string {
+  return role === "host" ? "ホスト" : "ゲスト";
+}
+
+function getFallbackDisplayNameFromPath(path: string): string {
+  return path.endsWith(".host") ? "ホスト" : "ゲスト";
 }
 
 function battleDocumentToRemoteSnapshot(

@@ -4,6 +4,8 @@ import type { RemoteBattleRole } from "../domain/remoteBattle";
 type RemoteBattleSetupProps = {
   roomId: string;
   role: RemoteBattleRole;
+  displayName: string;
+  opponentDisplayName: string;
   barcode: string;
   errorMessage: string | null;
   connectionLabel: string;
@@ -18,6 +20,8 @@ type RemoteBattleSetupProps = {
 export function RemoteBattleSetup({
   roomId,
   role,
+  displayName,
+  opponentDisplayName,
   barcode,
   errorMessage,
   connectionLabel,
@@ -37,6 +41,9 @@ export function RemoteBattleSetup({
         </p>
         <p className="readiness-note">
           {role === "host" ? "ホストとして参加中" : "ゲストとして参加中"}
+        </p>
+        <p className="readiness-note">
+          自分: {displayName} / 相手: {opponentDisplayName}
         </p>
       </div>
       <div className="connection-status" role="status">

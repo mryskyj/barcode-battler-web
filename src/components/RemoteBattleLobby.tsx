@@ -4,23 +4,31 @@ type RemoteBattleLobbyProps = {
   createdRoomId: string | null;
   joiningRoomId: string;
   canJoin: boolean;
+  canUseRemoteBattle: boolean;
+  disabledMessage: string | null;
+  errorMessage: string | null;
   onCreateRoom: () => void;
   onJoiningRoomIdChange: (roomId: string) => void;
   onJoinRoom: () => void;
+  onShowRanking: () => void;
 };
 
 export function RemoteBattleLobby({
   createdRoomId,
   joiningRoomId,
   canJoin,
+  canUseRemoteBattle,
+  disabledMessage,
+  errorMessage,
   onCreateRoom,
   onJoiningRoomIdChange,
   onJoinRoom,
+  onShowRanking,
 }: RemoteBattleLobbyProps) {
   function handleJoinSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!canJoin) {
+    if (!canJoin || !canUseRemoteBattle) {
       return;
     }
 
@@ -31,7 +39,13 @@ export function RemoteBattleLobby({
     <div className="remote-lobby">
       <section className="remote-lobby-panel" aria-label="部屋を作る">
         <h2>部屋を作る</h2>
-        <button type="button" onClick={onCreateRoom}>
+        {disabledMessage === null ? null : (
+          <p className="field-error">{disabledMessage}</p>
+        )}
+        {errorMessage === null ? null : (
+          <p className="field-error">{errorMessage}</p>
+        )}
+        <button type="button" onClick={onCreateRoom} disabled={!canUseRemoteBattle}>
           部屋を作る
         </button>
         {createdRoomId === null ? null : (
@@ -54,10 +68,17 @@ export function RemoteBattleLobby({
               autoCapitalize="characters"
             />
           </label>
-          <button type="submit" disabled={!canJoin}>
+          <button type="submit" disabled={!canJoin || !canUseRemoteBattle}>
             参加する
           </button>
         </form>
+      </section>
+
+      <section className="remote-lobby-panel" aria-label="ランキングを見る">
+        <h2>ランキング</h2>
+        <button type="button" className="secondary-button" onClick={onShowRanking}>
+          ランキングを見る
+        </button>
       </section>
     </div>
   );

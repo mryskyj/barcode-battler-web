@@ -101,6 +101,66 @@ input {
   gap: 12px;
 }
 
+.ranking-panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin-top: 12px;
+}
+
+.ranking-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ranking-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ranking-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 24px;
+}
+
+.ranking-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  border-radius: 6px;
+  background: #f3f6f6;
+  padding: 10px 12px;
+}
+
+.ranking-entry strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.profile-panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin-bottom: 12px;
+}
+
+.profile-summary {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.profile-summary h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
 .remote-setup {
   display: grid;
   gap: 12px;

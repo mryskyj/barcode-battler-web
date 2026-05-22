@@ -21,7 +21,7 @@
           ".validate": "newData.isNumber()"
         },
         "host": {
-          ".validate": "newData.hasChildren(['role', 'clientId', 'connected', 'ready'])",
+          ".validate": "newData.hasChildren(['role', 'clientId', 'displayName', 'connected', 'ready'])",
           "$other": {
             ".validate": false
           },
@@ -30,6 +30,9 @@
           },
           "clientId": {
             ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+          },
+          "displayName": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 16"
           },
           "connected": {
             ".validate": "newData.isBoolean()"
@@ -75,7 +78,7 @@
           }
         },
         "guest": {
-          ".validate": "newData.hasChildren(['role', 'clientId', 'connected', 'ready'])",
+          ".validate": "newData.hasChildren(['role', 'clientId', 'displayName', 'connected', 'ready'])",
           "$other": {
             ".validate": false
           },
@@ -84,6 +87,9 @@
           },
           "clientId": {
             ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+          },
+          "displayName": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 16"
           },
           "connected": {
             ".validate": "newData.isBoolean()"
@@ -180,6 +186,37 @@
               ".validate": "newData.isBoolean()"
             }
           }
+        }
+      }
+    },
+    "rankings": {
+      ".read": true,
+      ".write": false,
+      "$profileKey": {
+        ".write": "newData.hasChildren(['profileKey', 'displayName', 'wins', 'losses', 'battles', 'lastPlayedAt', 'updatedAt']) && newData.child('profileKey').val() === $profileKey",
+        "$other": {
+          ".validate": false
+        },
+        "profileKey": {
+          ".validate": "newData.isString() && newData.val() === $profileKey && newData.val().length > 0 && newData.val().length <= 80"
+        },
+        "displayName": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 16"
+        },
+        "wins": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 99999"
+        },
+        "losses": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 99999"
+        },
+        "battles": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 99999"
+        },
+        "lastPlayedAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber()"
         }
       }
     }
