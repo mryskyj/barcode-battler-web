@@ -335,7 +335,7 @@ export function App({
     setScreen("lobby");
   }
 
-  function backToRemoteLobby() {
+  function resetRemoteSession(nextScreen: AppScreen) {
     remoteSubscriptionRef.current?.();
     remoteSubscriptionRef.current = null;
     setRemoteSession(null);
@@ -343,8 +343,16 @@ export function App({
     setRemoteError(null);
     setRemoteReady(false);
     setRankingSaveError(null);
-    setScreen("lobby");
+    setScreen(nextScreen);
     savedRankingResultRef.current = null;
+  }
+
+  function backToRemoteLobby() {
+    resetRemoteSession("lobby");
+  }
+
+  function backToTitle() {
+    resetRemoteSession("title");
   }
 
   async function handleRemoteCommand(command: BattleCommand) {
@@ -460,8 +468,7 @@ export function App({
             entries={rankingEntries}
             loading={rankingLoading}
             errorMessage={rankingError}
-            onRefresh={showRanking}
-            onBackToLobby={() => setScreen("lobby")}
+            onBackToTitle={backToTitle}
           />
         </section>
       ) : activeScreen === "character" ? (
@@ -499,7 +506,7 @@ export function App({
           role={remoteSession.role}
           rankingErrorMessage={rankingSaveError}
           onShowRanking={showRanking}
-          onBackToLobby={backToRemoteLobby}
+          onBackToTitle={backToTitle}
         />
       ) : (
         <section className="setup-panel" aria-label="キャラクター生成">
@@ -667,13 +674,13 @@ function ResultScreen({
   role,
   rankingErrorMessage,
   onShowRanking,
-  onBackToLobby,
+  onBackToTitle,
 }: {
   room: RemoteBattleRoom;
   role: RemoteBattleRole;
   rankingErrorMessage: string | null;
   onShowRanking: () => void;
-  onBackToLobby: () => void;
+  onBackToTitle: () => void;
 }) {
   const resultText =
     room.battle.winner === "draw"
@@ -694,8 +701,8 @@ function ResultScreen({
             <button type="button" onClick={onShowRanking}>
               ランキングを見る
             </button>
-            <button type="button" className="secondary-button" onClick={onBackToLobby}>
-              ロビーへ戻る
+            <button type="button" className="secondary-button" onClick={onBackToTitle}>
+              タイトルに戻る
             </button>
           </div>
         </div>

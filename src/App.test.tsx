@@ -109,9 +109,49 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "ランキングを見る" }));
 
     expect(await screen.findByRole("region", { name: "ランキング" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "タイトルに戻る" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "更新" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "ロビーへ戻る" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "もう一回対戦" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("3勝")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
+  });
+
+  it("returns from rankings to the title screen", async () => {
+    const user = userEvent.setup();
+    render(
+      <App
+        remoteRepository={createFinishedOnSubscribeRepository()}
+        rankingRepository={createTestRankingRepository()}
+      />,
+    );
+
+    await saveDisplayName(user, "Alice");
+    await prepareCharacter(user);
+    await user.click(screen.getByRole("button", { name: "部屋を作る" }));
+    await user.click(await screen.findByRole("button", { name: "ランキングを見る" }));
+    await user.click(await screen.findByRole("button", { name: "タイトルに戻る" }));
+
+    expect(screen.getByRole("region", { name: "タイトル" })).toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+
+  it("returns from battle results to the title screen", async () => {
+    const user = userEvent.setup();
+    render(<App remoteRepository={createFinishedOnSubscribeRepository()} />);
+
+    await saveDisplayName(user, "Alice");
+    await prepareCharacter(user);
+    await user.click(screen.getByRole("button", { name: "部屋を作る" }));
+    await user.click(await screen.findByRole("button", { name: "タイトルに戻る" }));
+
+    expect(screen.getByRole("region", { name: "タイトル" })).toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
   });
 
   it("shows remote character setup after creating a room", async () => {
