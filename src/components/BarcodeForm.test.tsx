@@ -1,13 +1,14 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { BarcodeFormat } from "@zxing/library";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BarcodeForm } from "./BarcodeForm";
 
 const barcodeScannerMock = vi.hoisted(() => {
-  const decodeFromCanvas = vi.fn(() => ({
+  const createValidEan13Result = () => ({
     getText: () => " 4901234567894 ",
-    getBarcodeFormat: () => "EAN_13",
+    getBarcodeFormat: () => BarcodeFormat.EAN_13,
     getResultPoints: () => [
       {
         getX: () => 10,
@@ -18,7 +19,8 @@ const barcodeScannerMock = vi.hoisted(() => {
         getY: () => 20,
       },
     ],
-  }));
+  });
+  const decodeFromCanvas = vi.fn(createValidEan13Result);
   const reset = vi.fn();
   const BrowserMultiFormatOneDReader = vi.fn(
     function BrowserMultiFormatOneDReader() {
@@ -31,6 +33,7 @@ const barcodeScannerMock = vi.hoisted(() => {
 
   return {
     BrowserMultiFormatOneDReader,
+    createValidEan13Result,
     decodeFromCanvas,
     reset,
   };
@@ -43,6 +46,9 @@ vi.mock("@zxing/browser", () => ({
 describe("BarcodeForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    barcodeScannerMock.decodeFromCanvas.mockImplementation(
+      barcodeScannerMock.createValidEan13Result,
+    );
     globalThis.localStorage.clear();
     Object.defineProperty(globalThis.HTMLVideoElement.prototype, "videoWidth", {
       configurable: true,
@@ -126,6 +132,27 @@ describe("BarcodeForm", () => {
 
     expect(screen.getByLabelText("バーコード")).toHaveValue("4901234567894");
     expect(screen.queryByRole("button", { name: "カメラを閉じる" })).not.toBeInTheDocument();
+  });
+
+  it("ignores scan results that do not match supported EAN or UPC barcodes", async () => {
+    barcodeScannerMock.decodeFromCanvas.mockImplementation(() => ({
+      getText: () => "ABC123",
+      getBarcodeFormat: () => BarcodeFormat.CODE_39,
+      getResultPoints: () => [],
+    }));
+    const user = userEvent.setup();
+
+    render(<BarcodeFormHarness onSubmit={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "カメラで読み取る" }));
+
+    await waitFor(() => {
+      expect(barcodeScannerMock.decodeFromCanvas).toHaveBeenCalled();
+    });
+
+    expect(screen.getByLabelText("バーコード")).toHaveValue("");
+    expect(screen.queryByText(/読み取り成功:/)).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "カメラを閉じる" }).length).toBeGreaterThan(0);
   });
 
   it("shows scanner debug logs when explicitly enabled", async () => {

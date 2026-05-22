@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { BrowserMultiFormatOneDReader } from "@zxing/browser";
-import { DecodeHintType } from "@zxing/library";
+import { BarcodeFormat, DecodeHintType } from "@zxing/library";
+import { validateScannedBarcode } from "../domain/scannedBarcodeValidation";
 import { requestCameraStream } from "./barcodeScannerCamera";
 import {
   getVisibleCandidatePoints,
@@ -359,12 +360,28 @@ export function useBarcodeScanner({
               try {
                 const result = reader.decodeFromCanvas(captureCanvas);
                 const barcode = result.getText().trim();
+                const validation = validateScannedBarcode(
+                  barcode,
+                  result.getBarcodeFormat?.(),
+                );
 
-                if (barcode.length === 0) {
+                if (!validation.isValid) {
+                  appendDebugEntry("scan-result-rejected", {
+                    barcode,
+                    format: String(result.getBarcodeFormat?.() ?? "unknown"),
+                    reason: validation.reason,
+                    orientation,
+                    imageVariant,
+                  });
                   continue;
                 }
 
-                handleScanSuccess(barcode, result, frame, imageVariant);
+                handleScanSuccess(
+                  validation.normalizedBarcode,
+                  result,
+                  frame,
+                  imageVariant,
+                );
                 return;
               } catch (error) {
                 if (!isRecoverableScanError(error)) {
@@ -392,7 +409,7 @@ export function useBarcodeScanner({
     function handleScanSuccess(
       barcode: string,
       result: {
-        getBarcodeFormat?: () => unknown;
+        getBarcodeFormat?: () => BarcodeFormat;
         getResultPoints: () => ScannerResultPoint[];
       },
       frame: ScannerFrame,
@@ -455,8 +472,7 @@ export function useBarcodeScanner({
 
         appendDebugEntry("scan-start", {
           tryHarder: true,
-          possibleFormats:
-            "CODABAR,CODE_39,CODE_93,CODE_128,EAN_8,EAN_13,ITF,RSS_14,RSS_EXPANDED,UPC_A,UPC_E",
+          possibleFormats: "EAN_8,EAN_13,UPC_A,UPC_E",
           orientations: SCAN_ORIENTATIONS,
           imageVariants: SCANNER_IMAGE_VARIANTS,
           scanIntervalMs: SCAN_INTERVAL_MS,

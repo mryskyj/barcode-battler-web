@@ -1,4 +1,4 @@
-import { DecodeHintType } from "@zxing/library";
+import { BarcodeFormat, DecodeHintType } from "@zxing/library";
 import { describe, expect, it } from "vitest";
 import {
   BARCODE_SCANNER_FORMATS,
@@ -12,11 +12,15 @@ describe("barcodeScannerReader", () => {
     expect(hints.get(DecodeHintType.TRY_HARDER)).toBe(true);
   });
 
-  it("limits scanning to common 1D formats", () => {
+  it("limits scanning to EAN and UPC formats", () => {
     const hints = createBarcodeScannerHints();
 
     expect(hints.get(DecodeHintType.POSSIBLE_FORMATS)).toEqual([
-      ...BARCODE_SCANNER_FORMATS,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E,
     ]);
+    expect(hints.get(DecodeHintType.POSSIBLE_FORMATS)).toEqual([...BARCODE_SCANNER_FORMATS]);
   });
 });
