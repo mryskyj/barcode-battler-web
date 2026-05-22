@@ -180,6 +180,11 @@ input {
   gap: 12px;
 }
 
+.barcode-form-stack {
+  display: grid;
+  gap: 12px;
+}
+
 .field {
   display: grid;
   gap: 6px;
@@ -204,6 +209,51 @@ input {
   color: #9b2626;
   font-size: 0.92rem;
   font-weight: 700;
+}
+
+.barcode-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.barcode-actions button {
+  flex: 1 1 160px;
+}
+
+.barcode-scanner {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid #d2d8dc;
+  border-radius: 6px;
+  background: #f3f6f6;
+  padding: 12px;
+}
+
+.barcode-scanner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.barcode-scanner-header strong {
+  min-width: 0;
+}
+
+.barcode-scanner-preview {
+  overflow: hidden;
+  border-radius: 6px;
+  background: #000000;
+  aspect-ratio: 4 / 3;
+}
+
+.barcode-scanner-preview video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 button {
@@ -328,6 +378,7 @@ button:disabled {
 
 .command-grid button,
 .barcode-form button,
+.barcode-actions button,
 .result-panel button {
   white-space: normal;
 }
