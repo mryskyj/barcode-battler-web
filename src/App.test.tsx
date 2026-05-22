@@ -62,6 +62,9 @@ describe("App", () => {
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: "はじめる" }));
+
+    expect(screen.getByText("プレイヤーとうろく")).toBeInTheDocument();
+    expect(screen.getByText("バトルで使う名前を決めよう")).toBeInTheDocument();
     await user.type(screen.getByLabelText("ユーザー名"), " Alice ");
     await user.click(screen.getByRole("button", { name: "ユーザー名を保存" }));
 
@@ -71,6 +74,8 @@ describe("App", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "ユーザー名を変更" }));
+    expect(screen.getByText("プレイヤーへんこう")).toBeInTheDocument();
+    expect(screen.getByText("いまの名前")).toBeInTheDocument();
     await user.clear(screen.getByLabelText("ユーザー名"));
     await user.type(screen.getByLabelText("ユーザー名"), "Bob");
     await user.click(screen.getByRole("button", { name: "変更を保存" }));

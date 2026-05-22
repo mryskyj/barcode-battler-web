@@ -25,20 +25,35 @@ input {
 
 .app-shell {
   min-height: 100vh;
-  width: min(100%, 1040px);
-  margin: 0 auto;
-  padding: 20px;
   overflow-wrap: anywhere;
 }
 
-.app-header {
-  margin-bottom: 20px;
+.screen {
+  min-height: 100vh;
+  padding: clamp(16px, 4vw, 40px);
 }
 
-.app-header h1 {
-  margin: 0;
-  font-size: clamp(2rem, 8vw, 3.5rem);
-  line-height: 1;
+.screen-center {
+  display: grid;
+  place-items: center;
+}
+
+.screen-stack {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.content-narrow {
+  width: min(100%, 480px);
+}
+
+.content-medium {
+  width: min(100%, 640px);
+}
+
+.content-wide {
+  width: min(100%, 1040px);
 }
 
 .setup-panel,
@@ -59,7 +74,7 @@ input {
   gap: 18px;
   place-items: center;
   min-width: 0;
-  min-height: calc(100vh - 40px);
+  width: 100%;
   background:
     radial-gradient(circle at 16% 18%, rgb(255 216 79 / 28%) 0 42px, transparent 43px),
     radial-gradient(circle at 84% 78%, rgb(53 134 178 / 28%) 0 58px, transparent 59px),
@@ -415,9 +430,14 @@ input {
 
 .profile-panel {
   display: grid;
-  gap: 12px;
+  gap: 16px;
   min-width: 0;
-  margin-bottom: 12px;
+  width: min(100%, 520px);
+  margin: 0 auto;
+  background:
+    radial-gradient(circle at 86% 18%, rgb(241 200 75 / 22%) 0 38px, transparent 39px),
+    linear-gradient(145deg, rgb(255 253 242 / 92%), rgb(238 244 244 / 86%));
+  padding: 18px;
 }
 
 .profile-strip {
@@ -431,13 +451,53 @@ input {
 
 .profile-summary {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
+  text-align: center;
 }
 
 .profile-summary h2 {
   margin: 0;
-  font-size: 1rem;
+  color: #12151d;
+  font-size: 1.6rem;
+  line-height: 1.15;
+}
+
+.profile-kicker {
+  margin: 0;
+  color: #2d6f91;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.profile-help {
+  margin: 0;
+  color: #5b6870;
+  font-weight: 700;
+}
+
+.profile-current-name {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  margin: 4px 0 0;
+  border: 1px solid rgb(18 21 29 / 14%);
+  border-radius: 999px;
+  background: rgb(18 21 29 / 6%);
+  padding: 8px 14px;
+}
+
+.profile-current-name span {
+  color: #5b6870;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.profile-current-name strong {
+  min-width: 0;
+  color: #12151d;
+  font-size: 1.12rem;
+  overflow-wrap: anywhere;
 }
 
 .remote-setup {
@@ -943,14 +1003,6 @@ button:disabled {
 }
 
 @media (max-width: 420px) {
-  .app-shell {
-    padding: 12px;
-  }
-
-  .app-header {
-    margin-bottom: 14px;
-  }
-
   .setup-panel,
   .title-panel,
   .control-panel,

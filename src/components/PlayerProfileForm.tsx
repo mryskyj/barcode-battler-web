@@ -36,12 +36,13 @@ export function PlayerProfileForm({
   return (
     <section className="profile-panel" aria-label="プロフィール">
       <div className="profile-summary">
-        <h2>プロフィール</h2>
+        <p className="profile-kicker">PLAYER SETUP</p>
+        <h2>{profile === null ? "プレイヤーとうろく" : "プレイヤーへんこう"}</h2>
         {profile === null ? (
-          <p className="mode-note">ユーザー名を設定してください</p>
+          <p className="profile-help">バトルで使う名前を決めよう</p>
         ) : (
-          <p className="room-id-display">
-            <span>ユーザー名</span>
+          <p className="profile-current-name">
+            <span>いまの名前</span>
             <strong>{profile.displayName}</strong>
           </p>
         )}

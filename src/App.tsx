@@ -419,25 +419,25 @@ export function App({
 
   return (
     <main className="app-shell">
-      {activeScreen === "title" ? null : (
-        <header className="app-header">
-          <h1>Barcode Battler Web</h1>
-        </header>
-      )}
-
       {activeScreen === "title" ? (
-        <TitleScreen
-          profile={playerProfile}
-          onStart={() => setScreen(playerProfile === null ? "profile" : "character")}
-          onEditProfile={() => setScreen("profile")}
-        />
-      ) : playerProfile === null || activeScreen === "profile" ? (
-        <section className="setup-panel" aria-label="ユーザー名入力">
-          <PlayerProfileForm
+        <section className="screen screen-center title-screen" aria-label="タイトル">
+          <TitleScreen
             profile={playerProfile}
-            storageErrorMessage={profileError}
-            onSave={handleProfileSave}
+            onStart={() =>
+              setScreen(playerProfile === null ? "profile" : "character")
+            }
+            onEditProfile={() => setScreen("profile")}
           />
+        </section>
+      ) : playerProfile === null || activeScreen === "profile" ? (
+        <section className="screen screen-center profile-screen" aria-label="ユーザー名入力">
+          <div className="content-narrow">
+            <PlayerProfileForm
+              profile={playerProfile}
+              storageErrorMessage={profileError}
+              onSave={handleProfileSave}
+            />
+          </div>
         </section>
       ) : activeScreen === "ranking" ? (
         <section className="setup-panel" aria-label="ランキング画面">
@@ -636,7 +636,7 @@ function TitleScreen({
   onEditProfile: () => void;
 }) {
   return (
-    <section className="title-panel" aria-label="タイトル">
+    <div className="title-panel">
       <TitleEmblem />
 
       <div className="title-copy">
@@ -667,7 +667,7 @@ function TitleScreen({
           </button>
         )}
       </div>
-    </section>
+    </div>
   );
 }
 
