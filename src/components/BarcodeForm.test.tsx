@@ -1,38 +1,29 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BarcodeForm } from "./BarcodeForm";
 
 const barcodeScannerMock = vi.hoisted(() => {
-  const controls = {
-    stop: vi.fn(),
-  };
-  let callback:
-    | ((
-        result:
-          | {
-              getText: () => string;
-              getResultPoints?: () => Array<{
-                getX: () => number;
-                getY: () => number;
-              }>;
-            }
-          | undefined,
-        error: Error | undefined,
-        scannerControls: typeof controls,
-      ) => void)
-    | null = null;
-
-  const decodeFromStream = vi.fn(async (_stream, _preview, nextCallback) => {
-    callback = nextCallback;
-    return controls;
-  });
+  const decodeFromCanvas = vi.fn(() => ({
+    getText: () => " 4901234567894 ",
+    getBarcodeFormat: () => "EAN_13",
+    getResultPoints: () => [
+      {
+        getX: () => 10,
+        getY: () => 20,
+      },
+      {
+        getX: () => 80,
+        getY: () => 20,
+      },
+    ],
+  }));
   const reset = vi.fn();
   const BrowserMultiFormatOneDReader = vi.fn(
     function BrowserMultiFormatOneDReader() {
       return {
-        decodeFromStream,
+        decodeFromCanvas,
         reset,
       };
     },
@@ -40,9 +31,7 @@ const barcodeScannerMock = vi.hoisted(() => {
 
   return {
     BrowserMultiFormatOneDReader,
-    controls,
-    decodeFromStream,
-    getCallback: () => callback,
+    decodeFromCanvas,
     reset,
   };
 });
@@ -54,6 +43,30 @@ vi.mock("@zxing/browser", () => ({
 describe("BarcodeForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(globalThis.HTMLVideoElement.prototype, "videoWidth", {
+      configurable: true,
+      get() {
+        return 640;
+      },
+    });
+    Object.defineProperty(globalThis.HTMLVideoElement.prototype, "videoHeight", {
+      configurable: true,
+      get() {
+        return 480;
+      },
+    });
+    Object.defineProperty(globalThis.HTMLCanvasElement.prototype, "getContext", {
+      configurable: true,
+      value: vi.fn(() => ({
+        clearRect: vi.fn(),
+        drawImage: vi.fn(),
+        getImageData: vi.fn(() => ({ data: new Uint8ClampedArray(4), width: 1, height: 1 })),
+        rotate: vi.fn(),
+        scale: vi.fn(),
+        setTransform: vi.fn(),
+        translate: vi.fn(),
+      })),
+    });
     Object.defineProperty(globalThis.HTMLMediaElement.prototype, "play", {
       configurable: true,
       value: vi.fn(async () => undefined),
@@ -70,20 +83,18 @@ describe("BarcodeForm", () => {
     Object.defineProperty(globalThis.navigator, "mediaDevices", {
       configurable: true,
       value: {
-        getUserMedia: vi.fn(async () => ({
-          clone: () => ({
-            getTracks: () => [
-              {
-                stop: vi.fn(),
-              },
-            ],
-          }),
-          getTracks: () => [
-            {
-              stop: vi.fn(),
-            },
-          ],
-        })),
+        getUserMedia: vi.fn(async () => {
+          const track = {
+            stop: vi.fn(),
+            getSettings: vi.fn(() => ({})),
+            getCapabilities: vi.fn(() => ({})),
+          };
+
+          return {
+            getVideoTracks: () => [track],
+            getTracks: () => [track],
+          };
+        }),
       },
     });
   });
@@ -101,34 +112,11 @@ describe("BarcodeForm", () => {
     await user.click(screen.getByRole("button", { name: "カメラで読み取る" }));
 
     await waitFor(() => {
-      expect(barcodeScannerMock.decodeFromStream).toHaveBeenCalled();
+      expect(barcodeScannerMock.decodeFromCanvas).toHaveBeenCalled();
     });
 
-    expect(screen.getByText("バーコードを探しています")).toBeInTheDocument();
-
-    const callback = barcodeScannerMock.getCallback();
-
-    expect(callback).not.toBeNull();
-
-    await act(async () => {
-      callback?.(
-        {
-          getText: () => " 4901234567894 ",
-          getResultPoints: () => [
-            {
-              getX: () => 10,
-              getY: () => 20,
-            },
-            {
-              getX: () => 80,
-              getY: () => 20,
-            },
-          ],
-        },
-        undefined,
-        barcodeScannerMock.controls,
-      );
-    });
+    const logPanel = screen.getByLabelText("バーコードスキャナーログ");
+    expect(within(logPanel).getByText("scan-start")).toBeInTheDocument();
 
     expect(screen.getByText("読み取り成功: 4901234567894")).toBeInTheDocument();
 
@@ -138,7 +126,6 @@ describe("BarcodeForm", () => {
 
     expect(screen.getByLabelText("バーコード")).toHaveValue("4901234567894");
     expect(screen.queryByRole("button", { name: "カメラを閉じる" })).not.toBeInTheDocument();
-    expect(barcodeScannerMock.controls.stop).toHaveBeenCalled();
   });
 });
 

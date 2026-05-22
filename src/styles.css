@@ -365,6 +365,65 @@ input {
   color: #1d6a46;
 }
 
+.barcode-scanner-debug {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid #cad2d6;
+  border-radius: 6px;
+  background: #fbfcfc;
+  padding: 10px 12px;
+}
+
+.barcode-scanner-debug-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  color: #49605d;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.barcode-scanner-debug-header strong {
+  min-width: 0;
+}
+
+.barcode-scanner-debug-header span {
+  white-space: nowrap;
+}
+
+.barcode-scanner-debug-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.barcode-scanner-debug-list li {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  color: #31403f;
+  font-size: 0.8rem;
+}
+
+.barcode-scanner-debug-list strong {
+  font-size: 0.82rem;
+  color: #1f2937;
+}
+
+.barcode-scanner-debug-list span {
+  overflow-wrap: anywhere;
+  color: #58706d;
+}
+
+.barcode-scanner-debug-empty {
+  color: #58706d;
+}
+
 .barcode-scanner-status-error {
   color: #9b2626;
 }
