@@ -705,6 +705,23 @@ button:disabled {
     gap: 10px;
   }
 
+  .ranking-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ranking-list {
+    padding-left: 18px;
+  }
+
+  .ranking-entry {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ranking-entry strong {
+    grid-column: 1 / -1;
+  }
+
   .room-id-display {
     align-items: flex-start;
     flex-direction: column;
