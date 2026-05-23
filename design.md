@@ -190,8 +190,9 @@ rooms/{roomId}
 - Android Chromeなど `BarcodeDetector` に対応する端末では、ZXingに加えてブラウザ標準のネイティブ検出も試す
 - 高解像度カメラや大きいCanvasが使えない端末では、カメラ制約とスキャンキャンバスサイズを段階的に下げて継続する
 - 対応端末ではカメラ起動時に継続オートフォーカスを要求し、スマホではプレビューをタッチした位置へフォーカス要求を送る。未対応ブラウザでは何もせずスキャンを継続する
-- Android実機調査中はスキャナーのデバッグログを通常表示する。直近200件を保持し、画面からJSONコピーまたはJSONファイル保存できるようにする。非表示にしたい場合は `?scannerDebug=0` または `localStorage.setItem("barcodeScannerDebug", "0")` を指定する
-- デバッグログには端末/ブラウザ情報、画面サイズ、セキュアコンテキスト、カメラトラックのlabel/状態/設定/Capability、読み取り失敗周期の要約を含める
+- Android実機調査中はスキャナーのデバッグログを通常表示する。直近200件を保持し、重要イベントは候補検出ログより優先して残す。画面からJSONコピーまたはJSONファイル保存できるようにする。非表示にしたい場合は `?scannerDebug=0` または `localStorage.setItem("barcodeScannerDebug", "0")` を指定する
+- デバッグログには端末/ブラウザ情報、画面サイズ、セキュアコンテキスト、利用可能なビデオ入力一覧、カメラトラックのlabel/状態/設定/Capability、読み取り失敗周期の要約を含める
+- バーコード候補点のログは大量に流れやすいため、`candidate-visible` は一定間隔で間引き、抑止件数を `suppressedSinceLast` または `candidate-visible-summary` に残す
 
 ### 読み取り結果バリデーション
 
@@ -248,6 +249,7 @@ GTIN-8、GTIN-12、GTIN-13にはGS1のチェックデジット方式がある。
 - カメラ取得のフォールバックは `barcodeScannerCamera.ts` に置く
 - カメラの継続オートフォーカスとタッチフォーカスは `barcodeScannerFocus.ts` に置く
 - ブラウザ標準 `BarcodeDetector` の利用可否と検出結果の正規化は `barcodeNativeDetector.ts` に置く
+- カメラデバイス一覧の調査用整形は `barcodeScannerDevices.ts` に置く
 - 読み取り用画像補正は `barcodeScannerImage.ts` に置く
 - Canvasフレーム作成と座標変換は `barcodeScannerFrame.ts` に置く
 - スキャナーのデバッグ表示可否と詳細整形は `barcodeScannerDebug.ts` に置く

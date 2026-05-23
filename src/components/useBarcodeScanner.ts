@@ -15,11 +15,14 @@ import {
   SCAN_MAX_LONG_SIDES,
 } from "./barcodeScannerConfig";
 import {
+  appendScannerDebugEntry,
   formatScannerDetails,
   isBarcodeScannerDebugEnabled,
+  SCANNER_CANDIDATE_LOG_INTERVAL_MS,
   SCANNER_DEBUG_ENTRY_LIMIT,
   type ScannerDebugEntry,
 } from "./barcodeScannerDebug";
+import { getScannerVideoInputDetails } from "./barcodeScannerDevices";
 import {
   getScannerErrorMessage,
   getScannerErrorName,
@@ -86,6 +89,8 @@ export function useBarcodeScanner({
   const previewSizeRef = useRef({ width: 0, height: 0 });
   const debugEntryIdRef = useRef(0);
   const candidateDebugSignatureRef = useRef("");
+  const candidateDebugLastLoggedAtRef = useRef(0);
+  const candidateDebugSuppressedCountRef = useRef(0);
   const scanCycleCountRef = useRef(0);
 
   const cameraAvailable =
@@ -139,7 +144,11 @@ export function useBarcodeScanner({
         details: formatScannerDetails(details),
       };
       setDebugEntries((currentEntries) =>
-        [...currentEntries, nextEntry].slice(-SCANNER_DEBUG_ENTRY_LIMIT),
+        appendScannerDebugEntry(
+          currentEntries,
+          nextEntry,
+          SCANNER_DEBUG_ENTRY_LIMIT,
+        ),
       );
     },
     [logScannerEvent, scannerDebugEnabled],
@@ -373,8 +382,26 @@ export function useBarcodeScanner({
       }
 
       candidateDebugSignatureRef.current = signature;
+      const now = Date.now();
+      const elapsedMs = now - candidateDebugLastLoggedAtRef.current;
+
+      if (
+        candidateDebugLastLoggedAtRef.current > 0 &&
+        elapsedMs < SCANNER_CANDIDATE_LOG_INTERVAL_MS
+      ) {
+        candidateDebugSuppressedCountRef.current += 1;
+        return;
+      }
+
+      const suppressedSinceLast =
+        candidateDebugSuppressedCountRef.current > 0
+          ? candidateDebugSuppressedCountRef.current
+          : undefined;
+      candidateDebugSuppressedCountRef.current = 0;
+      candidateDebugLastLoggedAtRef.current = now;
       appendDebugEntry("candidate-visible", {
         pointCount: visiblePoints.length,
+        suppressedSinceLast,
         sourceWidth,
         sourceHeight,
         previewWidth: previewSizeRef.current.width,
@@ -382,6 +409,20 @@ export function useBarcodeScanner({
         points: visiblePoints,
         box,
       });
+    }
+
+    function flushCandidateDebugSummary(reason: string) {
+      if (candidateDebugSuppressedCountRef.current <= 0) {
+        return;
+      }
+
+      appendDebugEntry("candidate-visible-summary", {
+        reason,
+        suppressedCount: candidateDebugSuppressedCountRef.current,
+        lastSignature: candidateDebugSignatureRef.current,
+        intervalMs: SCANNER_CANDIDATE_LOG_INTERVAL_MS,
+      });
+      candidateDebugSuppressedCountRef.current = 0;
     }
 
     function scheduleNextScan() {
@@ -497,6 +538,7 @@ export function useBarcodeScanner({
       currentFrameRef.current = null;
       scanCycleCountRef.current += 1;
       if (scanCycleCountRef.current === 1 || scanCycleCountRef.current % 10 === 0) {
+        flushCandidateDebugSummary("scan-cycle-no-result");
         appendDebugEntry("scan-cycle-no-result", {
           cycleCount: scanCycleCountRef.current,
           videoWidth: video.videoWidth,
@@ -588,6 +630,7 @@ export function useBarcodeScanner({
       candidateTrackRef.current = null;
       currentFrameRef.current = null;
       setCandidatePoints([]);
+      flushCandidateDebugSummary("scan-success");
 
       const resultPoints = toScannerPoints(result.getResultPoints()).map((point) =>
         mapCanvasPointToSource(point, frame),
@@ -634,6 +677,8 @@ export function useBarcodeScanner({
         debugEntryIdRef.current = 0;
         setDebugEntries([]);
         candidateDebugSignatureRef.current = "";
+        candidateDebugLastLoggedAtRef.current = 0;
+        candidateDebugSuppressedCountRef.current = 0;
         scanCycleCountRef.current = 0;
 
         appendDebugEntry("scan-start", {
@@ -651,6 +696,13 @@ export function useBarcodeScanner({
           globalThis.navigator.mediaDevices,
           appendDebugEntry,
         );
+
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        await appendCameraDeviceDetails();
 
         if (cancelled) {
           stream.getTracks().forEach((track) => track.stop());
@@ -695,6 +747,25 @@ export function useBarcodeScanner({
         setStatus("error");
         setErrorMessage(getScannerErrorMessage(error));
         appendDebugEntry("scanner-failed", {
+          errorName: getScannerErrorName(error),
+          message: getScannerErrorMessage(error),
+        });
+      }
+    }
+
+    async function appendCameraDeviceDetails() {
+      try {
+        const details = await getScannerVideoInputDetails(
+          globalThis.navigator.mediaDevices,
+        );
+        if (!cancelled) {
+          appendDebugEntry("camera-devices", details);
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        appendDebugEntry("camera-devices-failed", {
           errorName: getScannerErrorName(error),
           message: getScannerErrorMessage(error),
         });

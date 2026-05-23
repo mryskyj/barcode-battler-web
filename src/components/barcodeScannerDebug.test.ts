@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  appendScannerDebugEntry,
   formatScannerDetails,
   isBarcodeScannerDebugEnabled,
+  type ScannerDebugEntry,
 } from "./barcodeScannerDebug";
 
 describe("barcodeScannerDebug", () => {
@@ -40,4 +42,38 @@ describe("barcodeScannerDebug", () => {
       '{"value":["a","b"]}',
     );
   });
+
+  it("drops non-important scanner entries before important entries", () => {
+    const entries = [
+      createEntry(1, "scan-start"),
+      createEntry(2, "candidate-visible"),
+    ];
+
+    expect(
+      appendScannerDebugEntry(entries, createEntry(3, "scan-success"), 2),
+    ).toEqual([createEntry(1, "scan-start"), createEntry(3, "scan-success")]);
+  });
+
+  it("falls back to a normal ring buffer when every entry is important", () => {
+    const entries = [
+      createEntry(1, "scan-start"),
+      createEntry(2, "scan-cycle-no-result"),
+    ];
+
+    expect(
+      appendScannerDebugEntry(entries, createEntry(3, "scan-success"), 2),
+    ).toEqual([
+      createEntry(2, "scan-cycle-no-result"),
+      createEntry(3, "scan-success"),
+    ]);
+  });
 });
+
+function createEntry(id: number, event: string): ScannerDebugEntry {
+  return {
+    id,
+    event,
+    createdAt: "2026-05-24T00:00:00.000Z",
+    details: "",
+  };
+}
