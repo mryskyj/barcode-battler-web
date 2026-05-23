@@ -191,6 +191,9 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "部屋を作る" }));
 
     expect(await screen.findByText("ホストとして参加中")).toBeInTheDocument();
+    expect(screen.getByText("マッチング")).toBeInTheDocument();
+    expect(screen.getByText("対戦カード")).toBeInTheDocument();
+    expect(screen.getByText("VS")).toBeInTheDocument();
     expect(screen.getByText("自分: Alice / 相手: ゲスト")).toBeInTheDocument();
     expect(screen.getByText("相手待ち")).toBeInTheDocument();
     expect(screen.getByText("ゲストの参加・準備待ち")).toBeInTheDocument();

@@ -23,6 +23,10 @@ export function RemoteBattleSetup({
 }: RemoteBattleSetupProps) {
   return (
     <div className="remote-setup">
+      <div className="remote-setup-heading">
+        <p>マッチング</p>
+        <h2>対戦カード</h2>
+      </div>
       <div className="room-summary">
         <p className="room-id-display">
           <span>部屋ID</span>
@@ -34,6 +38,17 @@ export function RemoteBattleSetup({
         <p className="readiness-note">
           自分: {displayName} / 相手: {opponentDisplayName}
         </p>
+      </div>
+      <div className="match-card">
+        <div className="match-player match-player-self">
+          <span>自分</span>
+          <strong>{displayName}</strong>
+        </div>
+        <div className="match-versus">VS</div>
+        <div className="match-player">
+          <span>相手</span>
+          <strong>{opponentDisplayName}</strong>
+        </div>
       </div>
       <div className="connection-status" role="status">
         <span>接続状態</span>

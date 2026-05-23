@@ -513,27 +513,29 @@ export function App({
               />
             </div>
           ) : (
-            <RemoteBattleSetup
-              roomId={remoteSession.roomId}
-              role={remoteSession.role}
-              displayName={getRemoteParticipantDisplayName(
-                remoteRoom,
-                remoteSession.role,
-              )}
-              opponentDisplayName={getRemoteParticipantDisplayName(
-                remoteRoom,
-                remoteSession.role === "host" ? "guest" : "host",
-              )}
-              connectionLabel={getRemoteConnectionLabel(remoteRoom, remoteError)}
-              statusText={getRemoteStatusText(
-                remoteSession.role,
-                remoteRoom,
-                remoteReady,
-                remoteError,
-              )}
-              ready={remoteReady}
-              onBackToLobby={backToRemoteLobby}
-            />
+            <div className="content-narrow">
+              <RemoteBattleSetup
+                roomId={remoteSession.roomId}
+                role={remoteSession.role}
+                displayName={getRemoteParticipantDisplayName(
+                  remoteRoom,
+                  remoteSession.role,
+                )}
+                opponentDisplayName={getRemoteParticipantDisplayName(
+                  remoteRoom,
+                  remoteSession.role === "host" ? "guest" : "host",
+                )}
+                connectionLabel={getRemoteConnectionLabel(remoteRoom, remoteError)}
+                statusText={getRemoteStatusText(
+                  remoteSession.role,
+                  remoteRoom,
+                  remoteReady,
+                  remoteError,
+                )}
+                ready={remoteReady}
+                onBackToLobby={backToRemoteLobby}
+              />
+            </div>
           )}
         </section>
       )}

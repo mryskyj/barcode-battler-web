@@ -628,14 +628,80 @@ input {
 
 .remote-setup {
   display: grid;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
+}
+
+.remote-setup-heading {
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+
+.remote-setup-heading p,
+.remote-setup-heading h2 {
+  margin: 0;
+}
+
+.remote-setup-heading p {
+  color: #2d6f91;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.remote-setup-heading h2 {
+  color: #12151d;
+  font-size: clamp(1.35rem, 7vw, 1.8rem);
+  line-height: 1.15;
 }
 
 .room-summary {
   display: grid;
   gap: 8px;
   min-width: 0;
+}
+
+.match-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border-radius: 10px;
+  background: rgb(45 111 145 / 7%);
+  padding: 14px;
+}
+
+.match-player {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border-radius: 8px;
+  background: #fffdf2;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.match-player span {
+  color: #58706d;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.match-player strong {
+  min-width: 0;
+  color: #12151d;
+  font-size: 1.12rem;
+  overflow-wrap: anywhere;
+}
+
+.match-player-self {
+  border: 2px solid rgb(45 111 145 / 34%);
+}
+
+.match-versus {
+  color: #c84c42;
+  font-size: 1.2rem;
+  font-weight: 900;
+  text-align: center;
 }
 
 .connection-status {
