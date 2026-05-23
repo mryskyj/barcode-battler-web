@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { validateBarcodeInput } from "../domain/barcodeValidation";
 import { BarcodeScanner } from "./BarcodeScanner";
+import { BarcodeScannerDebugPanel } from "./BarcodeScannerDebugPanel";
+import {
+  isBarcodeScannerDebugEnabled,
+  type ScannerDebugEntry,
+} from "./barcodeScannerDebug";
 
 type BarcodeFormProps = {
   barcode: string;
@@ -31,6 +36,13 @@ export function BarcodeForm({
     manualEntryInitiallyVisible,
   );
   const [scannerError, setScannerError] = useState<string | null>(null);
+  const [lastScannerDebugEntries, setLastScannerDebugEntries] = useState<
+    ScannerDebugEntry[]
+  >([]);
+  const scannerDebugEnabled = useMemo(
+    () => isBarcodeScannerDebugEnabled(import.meta.env.DEV),
+    [],
+  );
   const showManualEntry = manualEntryVisible && !scannerOpen;
   const showScanNote =
     !manualEntryVisible && !scannerOpen && barcode.length === 0;
@@ -47,6 +59,7 @@ export function BarcodeForm({
 
   function handleCameraOpen() {
     setScannerError(null);
+    setLastScannerDebugEntries([]);
     setManualEntryVisible(false);
     setScannerOpen(true);
   }
@@ -124,7 +137,10 @@ export function BarcodeForm({
           onDetected={handleBarcodeDetected}
           onClose={handleCameraClose}
           onManualEntry={manualEntryVisible ? undefined : handleManualEntryOpen}
+          onDebugEntriesChange={setLastScannerDebugEntries}
         />
+      ) : scannerDebugEnabled && lastScannerDebugEntries.length > 0 ? (
+        <BarcodeScannerDebugPanel entries={lastScannerDebugEntries} />
       ) : null}
     </div>
   );

@@ -1,16 +1,20 @@
+import { useEffect } from "react";
 import { BarcodeScannerDebugPanel } from "./BarcodeScannerDebugPanel";
+import type { ScannerDebugEntry } from "./barcodeScannerDebug";
 import { useBarcodeScanner } from "./useBarcodeScanner";
 
 type BarcodeScannerProps = {
   onDetected: (barcode: string) => void;
   onClose: () => void;
   onManualEntry?: () => void;
+  onDebugEntriesChange?: (entries: ScannerDebugEntry[]) => void;
 };
 
 export function BarcodeScanner({
   onDetected,
   onClose,
   onManualEntry,
+  onDebugEntriesChange,
 }: BarcodeScannerProps) {
   const {
     activeBox,
@@ -23,6 +27,10 @@ export function BarcodeScanner({
     status,
     videoRef,
   } = useBarcodeScanner({ onDetected, onClose });
+
+  useEffect(() => {
+    onDebugEntriesChange?.(debugEntries);
+  }, [debugEntries, onDebugEntriesChange]);
 
   return (
     <section className="barcode-scanner" aria-label="カメラでバーコード読み取り">

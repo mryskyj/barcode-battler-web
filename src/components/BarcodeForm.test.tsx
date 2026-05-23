@@ -132,6 +132,7 @@ describe("BarcodeForm", () => {
       expect(screen.queryByRole("button", { name: "カメラを閉じる" })).not.toBeInTheDocument();
     });
 
+    expect(screen.getByLabelText("バーコードスキャナーログ")).toBeInTheDocument();
     expect(screen.getByText("読み取り結果")).toBeInTheDocument();
     expect(screen.getByText("4901234567894")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "カメラを閉じる" })).not.toBeInTheDocument();
