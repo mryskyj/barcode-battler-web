@@ -19,5 +19,6 @@ export const CAMERA_CONSTRAINTS: MediaStreamConstraints[] = [
 
 export const CAMERA_UNAVAILABLE_MESSAGE =
   "この端末ではカメラ読み取りを使えません";
+export const CAMERA_SESSION_TIMEOUT_MS = 5 * 60 * 1000;
 export const SCAN_INTERVAL_MS = 120;
 export const SCAN_MAX_LONG_SIDES = [1920, 1280] as const;

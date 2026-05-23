@@ -243,6 +243,7 @@ GTIN-8、GTIN-12、GTIN-13はGS1のチェックデジット方式で検証する
 - `useBarcodeScanner.ts` はReact状態、カメラ起動、読み取りループ、検出後の通知を担当する
 - `BarcodeScannerDebugPanel.tsx` はスキャナーデバッグログの表示だけを担当する
 - カメラ制約とスキャン間隔は `barcodeScannerConfig.ts` に置く
+- カメラ接続は永続させず、1回の起動は最大5分で自動停止する。タブ非表示やページ離脱時もカメラを閉じる。タイトルからキャラクター準備へ遷移した初回は、ボタン押下なしでカメラ接続を開始する
 - カメラ取得のフォールバックは `barcodeScannerCamera.ts` に置く
 - 読み取り用画像補正は `barcodeScannerImage.ts` に置く
 - Canvasフレーム作成と座標変換は `barcodeScannerFrame.ts` に置く

@@ -1,9 +1,10 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { BarcodeFormat } from "@zxing/library";
+import { BarcodeFormat, NotFoundException } from "@zxing/library";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BarcodeForm } from "./BarcodeForm";
+import { CAMERA_SESSION_TIMEOUT_MS } from "./barcodeScannerConfig";
 
 const barcodeScannerMock = vi.hoisted(() => {
   const createValidEan13Result = () => ({
@@ -107,6 +108,7 @@ describe("BarcodeForm", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -237,6 +239,64 @@ describe("BarcodeForm", () => {
       screen.getByRole("region", { name: "カメラでバーコード読み取り" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "数字を直接入力" })).toBeInTheDocument();
+  });
+
+  it("closes the camera scanner after the session timeout", async () => {
+    vi.useFakeTimers();
+    barcodeScannerMock.decodeFromCanvas.mockImplementation(() => {
+      throw new NotFoundException();
+    });
+
+    render(
+      <BarcodeFormHarness
+        onSubmit={vi.fn()}
+        scannerInitiallyOpen
+        manualEntryInitiallyVisible={false}
+      />,
+    );
+
+    expect(
+      screen.getByRole("region", { name: "カメラでバーコード読み取り" }),
+    ).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(CAMERA_SESSION_TIMEOUT_MS);
+    });
+
+    expect(
+      screen.queryByRole("region", { name: "カメラでバーコード読み取り" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("closes the camera scanner when the document becomes hidden", async () => {
+    barcodeScannerMock.decodeFromCanvas.mockImplementation(() => {
+      throw new NotFoundException();
+    });
+
+    render(
+      <BarcodeFormHarness
+        onSubmit={vi.fn()}
+        scannerInitiallyOpen
+        manualEntryInitiallyVisible={false}
+      />,
+    );
+
+    expect(
+      screen.getByRole("region", { name: "カメラでバーコード読み取り" }),
+    ).toBeInTheDocument();
+
+    Object.defineProperty(globalThis.document, "visibilityState", {
+      configurable: true,
+      value: "hidden",
+    });
+
+    act(() => {
+      globalThis.document.dispatchEvent(new Event("visibilitychange"));
+    });
+
+    expect(
+      screen.queryByRole("region", { name: "カメラでバーコード読み取り" }),
+    ).not.toBeInTheDocument();
   });
 });
 

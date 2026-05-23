@@ -9,6 +9,7 @@ import {
   type BarcodeCandidateTrack,
 } from "./barcodeScannerCandidates";
 import {
+  CAMERA_SESSION_TIMEOUT_MS,
   CAMERA_UNAVAILABLE_MESSAGE,
   SCAN_INTERVAL_MS,
   SCAN_MAX_LONG_SIDES,
@@ -65,6 +66,7 @@ export function useBarcodeScanner({
   const candidateClearTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const successCloseTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
+  const cameraSessionTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const currentFrameRef = useRef<ScannerFrame | null>(null);
   const onDetectedRef = useRef(onDetected);
   const onCloseRef = useRef(onClose);
@@ -227,6 +229,25 @@ export function useBarcodeScanner({
         globalThis.clearTimeout(scanTimeoutRef.current);
         scanTimeoutRef.current = null;
       }
+    }
+
+    function closeScanner(reason: string) {
+      if (cancelled) {
+        return;
+      }
+
+      appendDebugEntry("scanner-closed", { reason });
+      onCloseRef.current();
+    }
+
+    function handleVisibilityChange() {
+      if (globalThis.document.visibilityState !== "visible") {
+        closeScanner("document-hidden");
+      }
+    }
+
+    function handlePageHidden() {
+      closeScanner("page-hidden");
     }
 
     function updateCandidatePreview(point: ScannerPoint) {
@@ -518,11 +539,19 @@ export function useBarcodeScanner({
       }
     }
 
+    cameraSessionTimeoutRef.current = globalThis.setTimeout(() => {
+      closeScanner("session-timeout");
+    }, CAMERA_SESSION_TIMEOUT_MS);
+    globalThis.document.addEventListener("visibilitychange", handleVisibilityChange);
+    globalThis.addEventListener("pagehide", handlePageHidden);
+
     void startScanning();
 
     return () => {
       cancelled = true;
       stopScanning();
+      globalThis.document.removeEventListener("visibilitychange", handleVisibilityChange);
+      globalThis.removeEventListener("pagehide", handlePageHidden);
       streamRef.current?.getTracks().forEach((track) => track.stop());
       video.srcObject = null;
       streamRef.current = null;
@@ -534,6 +563,10 @@ export function useBarcodeScanner({
       if (successCloseTimeoutRef.current !== null) {
         globalThis.clearTimeout(successCloseTimeoutRef.current);
         successCloseTimeoutRef.current = null;
+      }
+      if (cameraSessionTimeoutRef.current !== null) {
+        globalThis.clearTimeout(cameraSessionTimeoutRef.current);
+        cameraSessionTimeoutRef.current = null;
       }
     };
   }, [appendDebugEntry, cameraAvailable]);
