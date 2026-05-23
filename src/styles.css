@@ -1081,32 +1081,40 @@ input {
 }
 
 .barcode-scanner-debug {
-  display: grid;
-  gap: 8px;
   min-width: 0;
-  border: 1px solid #cad2d6;
-  border-radius: 6px;
-  background: #fbfcfc;
-  padding: 10px 12px;
+  color: #6b7d7a;
 }
 
-.barcode-scanner-debug-header {
-  display: flex;
+.barcode-scanner-debug-details {
+  border-top: 1px solid rgba(112, 129, 126, 0.24);
+  padding-top: 6px;
+}
+
+.barcode-scanner-debug-summary {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-width: 0;
-  color: #49605d;
-  font-size: 0.82rem;
+  gap: 8px;
+  min-height: 32px;
+  cursor: pointer;
+  color: #72827f;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
-.barcode-scanner-debug-header strong {
-  min-width: 0;
+.barcode-scanner-debug-summary small {
+  color: #8fa09d;
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
-.barcode-scanner-debug-header span {
-  white-space: nowrap;
+.barcode-scanner-debug-body {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  border: 1px solid rgba(112, 129, 126, 0.24);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.58);
+  padding: 10px;
 }
 
 .barcode-scanner-debug-actions {

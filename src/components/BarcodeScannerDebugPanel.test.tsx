@@ -8,7 +8,8 @@ describe("BarcodeScannerDebugPanel", () => {
   it("shows the retained entry count and export actions", () => {
     render(<BarcodeScannerDebugPanel entries={[createEntry(1)]} />);
 
-    expect(screen.getByText("latest 1/200")).toBeInTheDocument();
+    expect(screen.getByText("調査ログ")).toBeInTheDocument();
+    expect(screen.getByText("1/200")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ログをコピー" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "JSON保存" })).toBeInTheDocument();
   });

@@ -40,39 +40,43 @@ export function BarcodeScannerDebugPanel({
 
   return (
     <section className="barcode-scanner-debug" aria-label="バーコードスキャナーログ">
-      <div className="barcode-scanner-debug-header">
-        <strong>Scanner log</strong>
-        <span>
-          latest {entries.length}/{SCANNER_DEBUG_ENTRY_LIMIT}
-        </span>
-      </div>
-      <div className="barcode-scanner-debug-actions">
-        <button type="button" className="secondary-button" onClick={handleCopy}>
-          ログをコピー
-        </button>
-        <button type="button" className="secondary-button" onClick={handleDownload}>
-          JSON保存
-        </button>
-      </div>
-      {copyStatus === "copied" ? (
-        <p className="barcode-scanner-debug-status">コピーしました</p>
-      ) : null}
-      {copyStatus === "failed" ? (
-        <p className="barcode-scanner-debug-status">コピーできませんでした</p>
-      ) : null}
-      <ol className="barcode-scanner-debug-list">
-        {entries.length === 0 ? (
-          <li className="barcode-scanner-debug-empty">まだログはありません</li>
-        ) : (
-          entries.map((entry) => (
-            <li key={entry.id}>
-              <strong>{entry.event}</strong>
-              <small>{entry.createdAt}</small>
-              {entry.details.length === 0 ? null : <span>{entry.details}</span>}
-            </li>
-          ))
-        )}
-      </ol>
+      <details className="barcode-scanner-debug-details">
+        <summary className="barcode-scanner-debug-summary">
+          <span>調査ログ</span>
+          <small>
+            {entries.length}/{SCANNER_DEBUG_ENTRY_LIMIT}
+          </small>
+        </summary>
+        <div className="barcode-scanner-debug-body">
+          <div className="barcode-scanner-debug-actions">
+            <button type="button" className="secondary-button" onClick={handleCopy}>
+              ログをコピー
+            </button>
+            <button type="button" className="secondary-button" onClick={handleDownload}>
+              JSON保存
+            </button>
+          </div>
+          {copyStatus === "copied" ? (
+            <p className="barcode-scanner-debug-status">コピーしました</p>
+          ) : null}
+          {copyStatus === "failed" ? (
+            <p className="barcode-scanner-debug-status">コピーできませんでした</p>
+          ) : null}
+          <ol className="barcode-scanner-debug-list">
+            {entries.length === 0 ? (
+              <li className="barcode-scanner-debug-empty">まだログはありません</li>
+            ) : (
+              entries.map((entry) => (
+                <li key={entry.id}>
+                  <strong>{entry.event}</strong>
+                  <small>{entry.createdAt}</small>
+                  {entry.details.length === 0 ? null : <span>{entry.details}</span>}
+                </li>
+              ))
+            )}
+          </ol>
+        </div>
+      </details>
     </section>
   );
 }
