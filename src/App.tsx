@@ -765,11 +765,18 @@ function ResultScreen({
       : room.battle.winner === role
         ? "勝利"
         : "敗北";
+  const resultTone =
+    room.battle.winner === "draw"
+      ? "draw"
+      : room.battle.winner === role
+        ? "win"
+        : "loss";
 
   return (
-    <div className="battle-layout">
-      <section className="control-panel" aria-label="対戦結果">
-        <div className="result-panel">
+    <section className="screen screen-center result-screen" aria-label="対戦結果">
+      <div className="content-narrow result-layout">
+        <div className={`result-panel result-panel-${resultTone}`}>
+          <p>バトル終了</p>
           <strong>{resultText}</strong>
           {rankingErrorMessage === null ? null : (
             <p className="field-error">{rankingErrorMessage}</p>
@@ -783,12 +790,12 @@ function ResultScreen({
             </button>
           </div>
         </div>
-      </section>
 
-      <BattleLog
-        entries={room.battle.log.length === 0 ? ["通信対戦終了"] : room.battle.log}
-      />
-    </div>
+        <BattleLog
+          entries={room.battle.log.length === 0 ? ["通信対戦終了"] : room.battle.log}
+        />
+      </div>
+    </section>
   );
 }
 

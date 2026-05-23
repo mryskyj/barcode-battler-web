@@ -176,6 +176,10 @@ describe("App", () => {
     await saveDisplayName(user, "Alice");
     await prepareCharacter(user);
     await user.click(screen.getByRole("button", { name: "部屋を作る" }));
+
+    expect(await screen.findByRole("region", { name: "対戦結果" })).toBeInTheDocument();
+    expect(screen.getByText("バトル終了")).toBeInTheDocument();
+    expect(screen.getByText("勝利")).toBeInTheDocument();
     await user.click(await screen.findByRole("button", { name: "タイトルに戻る" }));
 
     expect(screen.getByRole("region", { name: "タイトル" })).toBeInTheDocument();
