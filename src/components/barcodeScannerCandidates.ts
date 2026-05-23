@@ -1,4 +1,4 @@
-import type { ScannerPoint } from "./barcodeScannerGeometry";
+import { isFiniteScannerPoint, type ScannerPoint } from "./barcodeScannerGeometry";
 
 export type BarcodeCandidateTrack = {
   points: ScannerPoint[];
@@ -22,8 +22,16 @@ export function updateBarcodeCandidateTrack(
   sourceSize: SourceSize,
   now: number,
 ): BarcodeCandidateTrack {
+  if (!isFiniteScannerPoint(point)) {
+    return currentTrack ?? {
+      points: [],
+      lastSeenAt: now,
+    };
+  }
+
   if (
     currentTrack === null ||
+    currentTrack.points.length === 0 ||
     now - currentTrack.lastSeenAt > CANDIDATE_STALE_MS
   ) {
     return {
@@ -64,12 +72,18 @@ export function getVisibleCandidatePoints(
     return null;
   }
 
-  const bounds = getBounds(currentTrack.points);
+  const finitePoints = currentTrack.points.filter(isFiniteScannerPoint);
+
+  if (finitePoints.length < MIN_VISIBLE_POINTS) {
+    return null;
+  }
+
+  const bounds = getBounds(finitePoints);
   if (bounds.width < MIN_SPAN_PX && bounds.height < MIN_SPAN_PX) {
     return null;
   }
 
-  return currentTrack.points;
+  return finitePoints;
 }
 
 function getCenterPoint(points: ScannerPoint[]): ScannerPoint {

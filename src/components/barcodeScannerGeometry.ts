@@ -23,7 +23,9 @@ export function createScannerBox(
   points: ScannerPoint[],
   layout: ScannerLayout,
 ): ScannerBox | null {
-  if (points.length === 0) {
+  const finitePoints = points.filter(isFiniteScannerPoint);
+
+  if (finitePoints.length === 0) {
     return null;
   }
 
@@ -50,7 +52,7 @@ export function createScannerBox(
   let maxX = Number.NEGATIVE_INFINITY;
   let maxY = Number.NEGATIVE_INFINITY;
 
-  for (const point of points) {
+  for (const point of finitePoints) {
     const x = point.x * scale + offsetX;
     const y = point.y * scale + offsetY;
 
@@ -71,6 +73,10 @@ export function createScannerBox(
     width: Math.min(width, layout.previewWidth),
     height: Math.min(height, layout.previewHeight),
   };
+}
+
+export function isFiniteScannerPoint(point: ScannerPoint): boolean {
+  return Number.isFinite(point.x) && Number.isFinite(point.y);
 }
 
 function clamp(value: number, min: number, max: number): number {

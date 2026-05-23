@@ -54,4 +54,39 @@ describe("barcodeScannerCandidates", () => {
     expect(getVisibleCandidatePoints(track, 100)).toBeNull();
     expect(getVisibleCandidatePoints(track, 400)).toBeNull();
   });
+
+  it("keeps non-finite points out of visible candidates", () => {
+    let track: BarcodeCandidateTrack | null = null;
+
+    track = updateBarcodeCandidateTrack(
+      track,
+      { x: Number.NaN, y: 40 },
+      { width: 800, height: 600 },
+      0,
+    );
+    track = updateBarcodeCandidateTrack(
+      track,
+      { x: 100, y: 40 },
+      { width: 800, height: 600 },
+      40,
+    );
+    track = updateBarcodeCandidateTrack(
+      track,
+      { x: 112, y: 44 },
+      { width: 800, height: 600 },
+      80,
+    );
+    track = updateBarcodeCandidateTrack(
+      track,
+      { x: 118, y: 42 },
+      { width: 800, height: 600 },
+      140,
+    );
+
+    expect(getVisibleCandidatePoints(track, 180)).toEqual([
+      { x: 100, y: 40 },
+      { x: 112, y: 44 },
+      { x: 118, y: 42 },
+    ]);
+  });
 });

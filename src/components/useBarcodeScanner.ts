@@ -30,6 +30,7 @@ import {
 } from "./barcodeScannerErrors";
 import {
   createScannerBox,
+  isFiniteScannerPoint,
   type ScannerBox,
   type ScannerPoint,
 } from "./barcodeScannerGeometry";
@@ -91,6 +92,7 @@ export function useBarcodeScanner({
   const candidateDebugSignatureRef = useRef("");
   const candidateDebugLastLoggedAtRef = useRef(0);
   const candidateDebugSuppressedCountRef = useRef(0);
+  const scanStartedAtRef = useRef(0);
   const scanCycleCountRef = useRef(0);
 
   const cameraAvailable =
@@ -323,6 +325,10 @@ export function useBarcodeScanner({
       const sourceWidth = videoRef.current?.videoWidth ?? 0;
       const sourceHeight = videoRef.current?.videoHeight ?? 0;
 
+      if (!isFiniteScannerPoint(point)) {
+        return;
+      }
+
       if (sourceWidth <= 0 || sourceHeight <= 0) {
         return;
       }
@@ -352,6 +358,14 @@ export function useBarcodeScanner({
         candidateClearTimeoutRef.current = null;
         appendDebugEntry("candidate-cleared");
       }, 240);
+    }
+
+    function getScanElapsedMs() {
+      if (scanStartedAtRef.current <= 0) {
+        return undefined;
+      }
+
+      return Date.now() - scanStartedAtRef.current;
     }
 
     function appendCandidateDebugEntry(
@@ -541,6 +555,7 @@ export function useBarcodeScanner({
         flushCandidateDebugSummary("scan-cycle-no-result");
         appendDebugEntry("scan-cycle-no-result", {
           cycleCount: scanCycleCountRef.current,
+          elapsedMs: getScanElapsedMs(),
           videoWidth: video.videoWidth,
           videoHeight: video.videoHeight,
           previewWidth: previewSizeRef.current.width,
@@ -643,6 +658,7 @@ export function useBarcodeScanner({
       appendDebugEntry("scan-success", {
         barcode,
         format: String(result.getBarcodeFormat?.() ?? "unknown"),
+        elapsedMs: getScanElapsedMs(),
         orientation: frame.orientation,
         imageVariant,
         resultPointCount: resultPoints.length,
@@ -679,6 +695,7 @@ export function useBarcodeScanner({
         candidateDebugSignatureRef.current = "";
         candidateDebugLastLoggedAtRef.current = 0;
         candidateDebugSuppressedCountRef.current = 0;
+        scanStartedAtRef.current = Date.now();
         scanCycleCountRef.current = 0;
 
         appendDebugEntry("scan-start", {
