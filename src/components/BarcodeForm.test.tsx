@@ -137,7 +137,7 @@ describe("BarcodeForm", () => {
     expect(screen.queryByRole("button", { name: "カメラを閉じる" })).not.toBeInTheDocument();
   });
 
-  it("ignores scan results that do not match supported EAN or UPC barcodes", async () => {
+  it("ignores scan results that are not 8 or 13 digits", async () => {
     barcodeScannerMock.decodeFromCanvas.mockImplementation(() => ({
       getText: () => "ABC123",
       getBarcodeFormat: () => BarcodeFormat.CODE_39,

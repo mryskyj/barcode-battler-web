@@ -300,7 +300,7 @@ describe("App", () => {
     await user.clear(await screen.findByLabelText("自分のバーコード"));
     await user.type(screen.getByLabelText("自分のバーコード"), "123");
 
-    expect(screen.getByText("4文字以上で入力してください")).toBeInTheDocument();
+    expect(screen.getByText("8桁または13桁の数字で入力してください")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "キャラクター準備" })).toBeDisabled();
   });
 

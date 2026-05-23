@@ -2,8 +2,6 @@ import { BarcodeFormat } from "@zxing/library";
 import { describe, expect, it } from "vitest";
 import {
   calculateGs1CheckDigit,
-  expandUpcEToUpcA,
-  isValidGs1CheckDigit,
   validateScannedBarcode,
 } from "./scannedBarcodeValidation";
 
@@ -13,7 +11,7 @@ describe("scannedBarcodeValidation", () => {
     expect(calculateGs1CheckDigit("9638507")).toBe(4);
   });
 
-  it("validates EAN-13 and EAN-8 scan results", () => {
+  it("accepts 13-digit and 8-digit scan text", () => {
     expect(validateScannedBarcode("4901234567894", BarcodeFormat.EAN_13)).toEqual({
       normalizedBarcode: "4901234567894",
       isValid: true,
@@ -22,41 +20,32 @@ describe("scannedBarcodeValidation", () => {
     expect(validateScannedBarcode("96385074", BarcodeFormat.EAN_8).isValid).toBe(true);
   });
 
-  it("rejects invalid check digits", () => {
+  it("does not reject a 13-digit scan text by check digit alone", () => {
     expect(validateScannedBarcode("4901234567890", BarcodeFormat.EAN_13)).toEqual({
       normalizedBarcode: "4901234567890",
-      isValid: false,
-      reason: "invalid-ean-13",
-    });
-  });
-
-  it("validates UPC-A scan results", () => {
-    expect(validateScannedBarcode("036000291452", BarcodeFormat.UPC_A).isValid).toBe(true);
-    expect(isValidGs1CheckDigit("036000291452")).toBe(true);
-  });
-
-  it("expands and validates UPC-E scan results", () => {
-    expect(expandUpcEToUpcA("04210007")).toBe("042000001007");
-    expect(validateScannedBarcode("04210007", BarcodeFormat.UPC_E)).toEqual({
-      normalizedBarcode: "04210007",
       isValid: true,
       reason: null,
     });
   });
 
-  it("rejects UPC-E scan results with invalid check digits", () => {
-    expect(validateScannedBarcode("04210005", BarcodeFormat.UPC_E)).toEqual({
-      normalizedBarcode: "04210005",
+  it("rejects scan text that is not 8 or 13 digits", () => {
+    expect(validateScannedBarcode("036000291452", BarcodeFormat.UPC_A)).toEqual({
+      normalizedBarcode: "036000291452",
       isValid: false,
-      reason: "invalid-upc-e",
+      reason: "invalid-barcode-text",
+    });
+    expect(validateScannedBarcode("12345678901234", BarcodeFormat.EAN_13)).toEqual({
+      normalizedBarcode: "12345678901234",
+      isValid: false,
+      reason: "invalid-barcode-text",
     });
   });
 
-  it("rejects unsupported formats", () => {
+  it("rejects non-numeric scan text", () => {
     expect(validateScannedBarcode("ABC123", BarcodeFormat.CODE_39)).toEqual({
       normalizedBarcode: "ABC123",
       isValid: false,
-      reason: "unsupported-format",
+      reason: "invalid-barcode-text",
     });
   });
 

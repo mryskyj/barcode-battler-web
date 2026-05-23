@@ -10,17 +10,32 @@ describe("validateBarcodeInput", () => {
     });
   });
 
-  it("rejects too short input", () => {
+  it("rejects input that is not 8 or 13 digits", () => {
     expect(validateBarcodeInput("123")).toEqual({
       normalizedBarcode: "123",
       isValid: false,
-      message: "4文字以上で入力してください",
+      message: "8桁または13桁の数字で入力してください",
+    });
+    expect(validateBarcodeInput("123456789012")).toEqual({
+      normalizedBarcode: "123456789012",
+      isValid: false,
+      message: "8桁または13桁の数字で入力してください",
+    });
+    expect(validateBarcodeInput("ABCDEFGH")).toEqual({
+      normalizedBarcode: "ABCDEFGH",
+      isValid: false,
+      message: "8桁または13桁の数字で入力してください",
     });
   });
 
   it("accepts valid input and trims whitespace", () => {
-    expect(validateBarcodeInput("  1234  ")).toEqual({
-      normalizedBarcode: "1234",
+    expect(validateBarcodeInput("  12345678  ")).toEqual({
+      normalizedBarcode: "12345678",
+      isValid: true,
+      message: null,
+    });
+    expect(validateBarcodeInput("  4901234567894  ")).toEqual({
+      normalizedBarcode: "4901234567894",
       isValid: true,
       message: null,
     });

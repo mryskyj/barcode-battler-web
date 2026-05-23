@@ -4,7 +4,7 @@ export type BarcodeValidationResult = {
   message: string | null;
 };
 
-const MIN_BARCODE_LENGTH = 4;
+const ALLOWED_BARCODE_PATTERN = /^\d{8}$|^\d{13}$/;
 
 export function validateBarcodeInput(input: string): BarcodeValidationResult {
   const normalizedBarcode = input.trim();
@@ -17,11 +17,11 @@ export function validateBarcodeInput(input: string): BarcodeValidationResult {
     };
   }
 
-  if (normalizedBarcode.length < MIN_BARCODE_LENGTH) {
+  if (!ALLOWED_BARCODE_PATTERN.test(normalizedBarcode)) {
     return {
       normalizedBarcode,
       isValid: false,
-      message: `${MIN_BARCODE_LENGTH}文字以上で入力してください`,
+      message: "8桁または13桁の数字で入力してください",
     };
   }
 

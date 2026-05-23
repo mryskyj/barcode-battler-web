@@ -1,4 +1,4 @@
-import { BarcodeFormat } from "@zxing/library";
+import type { BarcodeFormat } from "@zxing/library";
 
 export type ScannedBarcodeValidationResult = {
   normalizedBarcode: string;
@@ -7,29 +7,24 @@ export type ScannedBarcodeValidationResult = {
 };
 
 const DIGITS_ONLY = /^\d+$/;
+const ALLOWED_BARCODE_PATTERN = /^\d{8}$|^\d{13}$/;
 
 export function validateScannedBarcode(
   text: string,
   format: BarcodeFormat | null | undefined,
 ): ScannedBarcodeValidationResult {
+  void format;
   const normalizedBarcode = text.trim();
 
   if (normalizedBarcode.length === 0) {
     return reject(normalizedBarcode, "empty");
   }
 
-  switch (format) {
-    case BarcodeFormat.EAN_8:
-      return validateGtinLength(normalizedBarcode, 8, "invalid-ean-8");
-    case BarcodeFormat.EAN_13:
-      return validateGtinLength(normalizedBarcode, 13, "invalid-ean-13");
-    case BarcodeFormat.UPC_A:
-      return validateGtinLength(normalizedBarcode, 12, "invalid-upc-a");
-    case BarcodeFormat.UPC_E:
-      return validateUpcE(normalizedBarcode);
-    default:
-      return reject(normalizedBarcode, "unsupported-format");
+  if (!ALLOWED_BARCODE_PATTERN.test(normalizedBarcode)) {
+    return reject(normalizedBarcode, "invalid-barcode-text");
   }
+
+  return accept(normalizedBarcode);
 }
 
 export function isValidGs1CheckDigit(value: string): boolean {
@@ -84,32 +79,6 @@ export function expandUpcEToUpcA(upcE: string): string | null {
   const expanded = `${expandedBody}${expandedCheckDigit}`;
 
   return isValidGs1CheckDigit(expanded) ? expanded : null;
-}
-
-function validateGtinLength(
-  normalizedBarcode: string,
-  length: number,
-  reason: string,
-): ScannedBarcodeValidationResult {
-  if (
-    normalizedBarcode.length !== length ||
-    !DIGITS_ONLY.test(normalizedBarcode) ||
-    !isValidGs1CheckDigit(normalizedBarcode)
-  ) {
-    return reject(normalizedBarcode, reason);
-  }
-
-  return accept(normalizedBarcode);
-}
-
-function validateUpcE(normalizedBarcode: string): ScannedBarcodeValidationResult {
-  const expanded = expandUpcEToUpcA(normalizedBarcode);
-
-  if (expanded === null) {
-    return reject(normalizedBarcode, "invalid-upc-e");
-  }
-
-  return accept(normalizedBarcode);
 }
 
 function expandUpcEBody(
