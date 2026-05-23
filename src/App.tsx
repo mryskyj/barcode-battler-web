@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BattleLog } from "./components/BattleLog";
+import { BattleStage } from "./components/BattleStage";
 import { BarcodeForm } from "./components/BarcodeForm";
 import { CommandButtons } from "./components/CommandButtons";
-import { CombatantPanel } from "./components/CombatantPanel";
 import { PlayerProfileForm } from "./components/PlayerProfileForm";
 import { RankingBoard } from "./components/RankingBoard";
 import { RemoteBattleLobby } from "./components/RemoteBattleLobby";
@@ -572,57 +572,56 @@ function RemoteBattleView({
           : "敗北";
 
   return (
-    <div className="battle-layout">
-      <div className="combatants-grid">
-        {hostCombatant === null ? null : (
-          <CombatantPanel title={room.host.displayName} combatant={hostCombatant} />
-        )}
-        {guestCombatant === null ? null : (
-          <CombatantPanel
-            title={room.guest?.displayName ?? "ゲスト"}
-            combatant={guestCombatant}
-          />
-        )}
+    <section className="screen battle-screen" aria-label="通信対戦">
+      <div className="content-medium battle-layout">
+        <BattleStage
+          opponentName={opponentParticipant?.displayName ?? "ゲスト"}
+          opponentCombatant={role === "host" ? guestCombatant : hostCombatant}
+          selfName={ownParticipant?.displayName ?? "自分"}
+          selfCombatant={role === "host" ? hostCombatant : guestCombatant}
+        />
+
+        <section className="control-panel battle-hud" aria-label="通信対戦操作">
+          {errorMessage === null ? null : (
+            <p className="error-message">{errorMessage}</p>
+          )}
+          {rankingErrorMessage === null ? null : (
+            <p className="field-error">{rankingErrorMessage}</p>
+          )}
+          {winnerText === null ? (
+            <>
+              <div className="battle-status-row">
+                <p className="readiness-note">
+                  {ownParticipant?.selectedCommand === null
+                    ? "自分のコマンド選択待ち"
+                    : "自分は選択済み"}
+                </p>
+                <p className="readiness-note">
+                  {opponentParticipant?.selectedCommand === null
+                    ? "相手の選択待ち"
+                    : "相手は選択済み"}
+                </p>
+              </div>
+              <CommandButtons
+                disabled={ownParticipant?.selectedCommand !== null}
+                onCommand={onCommand}
+              />
+            </>
+          ) : (
+            <div className="result-panel">
+              <strong>{winnerText}</strong>
+              <button type="button" className="secondary-button" onClick={onBackToSetup}>
+                部屋選択へ戻る
+              </button>
+            </div>
+          )}
+        </section>
+
+        <BattleLog
+          entries={room.battle.log.length === 0 ? ["通信対戦開始"] : room.battle.log}
+        />
       </div>
-
-      <section className="control-panel" aria-label="通信対戦操作">
-        {errorMessage === null ? null : (
-          <p className="error-message">{errorMessage}</p>
-        )}
-        {rankingErrorMessage === null ? null : (
-          <p className="field-error">{rankingErrorMessage}</p>
-        )}
-        {winnerText === null ? (
-          <>
-            <p className="readiness-note">
-              {ownParticipant?.selectedCommand === null
-                ? "自分のコマンド選択待ち"
-                : "自分は選択済み"}
-            </p>
-            <p className="readiness-note">
-              {opponentParticipant?.selectedCommand === null
-                ? "相手の選択待ち"
-                : "相手は選択済み"}
-            </p>
-            <CommandButtons
-              disabled={ownParticipant?.selectedCommand !== null}
-              onCommand={onCommand}
-            />
-          </>
-        ) : (
-          <div className="result-panel">
-            <strong>{winnerText}</strong>
-            <button type="button" className="secondary-button" onClick={onBackToSetup}>
-              部屋選択へ戻る
-            </button>
-          </div>
-        )}
-      </section>
-
-      <BattleLog
-        entries={room.battle.log.length === 0 ? ["通信対戦開始"] : room.battle.log}
-      />
-    </div>
+    </section>
   );
 }
 

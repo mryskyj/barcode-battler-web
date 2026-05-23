@@ -1113,11 +1113,125 @@ button:disabled {
 .battle-layout {
   display: grid;
   gap: 16px;
+  margin: 0 auto;
 }
 
 .combatants-grid {
   display: grid;
   gap: 12px;
+}
+
+.battle-screen {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  background: #eef2f3;
+}
+
+.battle-stage {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgb(45 111 145 / 12%), transparent 38%),
+    #fffdf2;
+  padding: 14px;
+}
+
+.battle-actor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(72px, 30%);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.battle-actor-self {
+  grid-template-columns: minmax(84px, 34%) minmax(0, 1fr);
+}
+
+.battle-actor-self .battle-actor-info,
+.battle-actor-self .battle-hp {
+  grid-column: 2;
+}
+
+.battle-actor-self .character-slot {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.battle-actor-info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.battle-actor-info span {
+  color: #2d6f91;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.battle-actor-info strong {
+  color: #12151d;
+  font-size: clamp(1rem, 5vw, 1.28rem);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.battle-actor-info small {
+  color: #58706d;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.character-slot {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 40%, rgb(45 111 145 / 22%), transparent 34%),
+    #e6efed;
+}
+
+.character-slot span {
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 999px 999px 8px 8px;
+  background: #2d6f91;
+  opacity: 0.42;
+}
+
+.battle-field {
+  display: grid;
+  place-items: center;
+  min-height: 42px;
+  color: #c84c42;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.battle-hp {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.battle-stats {
+  margin-top: 0;
+}
+
+.battle-hud {
+  display: grid;
+  gap: 12px;
+}
+
+.battle-status-row {
+  display: grid;
+  gap: 8px;
 }
 
 .combatant-panel {

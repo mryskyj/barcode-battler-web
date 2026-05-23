@@ -166,7 +166,7 @@ describe("App", () => {
     await user.click(await screen.findByRole("button", { name: "タイトルに戻る" }));
 
     expect(screen.getByRole("region", { name: "タイトル" })).toBeInTheDocument();
-    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getAllByText("Alice").length).toBeGreaterThan(0);
   });
 
   it("returns from battle results to the title screen", async () => {
@@ -245,6 +245,23 @@ describe("App", () => {
 
     expect(await screen.findByRole("status")).toHaveTextContent("相手待ち");
     expect(screen.getByRole("button", { name: "退出して戻る" })).toBeEnabled();
+  });
+
+  it("shows the remote battle as a front and back battle stage", async () => {
+    const user = userEvent.setup();
+    render(<App remoteRepository={createPlayingOnSubscribeRepository()} />);
+
+    await saveDisplayName(user, "Alice");
+    await prepareCharacter(user);
+    await user.click(screen.getByRole("button", { name: "部屋を作る" }));
+
+    expect(await screen.findByRole("region", { name: "バトルステージ" })).toBeInTheDocument();
+    expect(screen.getByText("相手")).toBeInTheDocument();
+    expect(screen.getByText("自分")).toBeInTheDocument();
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.getAllByText("Alice").length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText("キャラクタースロット")).toHaveLength(2);
+    expect(screen.getByRole("region", { name: "通信対戦操作" })).toBeInTheDocument();
   });
 
   it("normalizes remote room ids before joining", async () => {
@@ -480,6 +497,53 @@ function createFinishedOnSubscribeRepository(): FirebaseRoomRepository {
           log: ["Aliceの勝利。バトル終了"],
         },
       };
+    },
+    async getRoom() {
+      return room;
+    },
+    subscribeRoom(_roomId, onRoom) {
+      onRoom(room);
+      return () => undefined;
+    },
+    async updateRoom() {
+      return undefined;
+    },
+    async removeRoom() {
+      room = null;
+    },
+  };
+}
+
+function createPlayingOnSubscribeRepository(): FirebaseRoomRepository {
+  let room: RemoteBattleRoom | null = null;
+
+  return {
+    async createRoom(nextRoom) {
+      const createdRoom = firebaseRoomDocumentToRemoteBattleRoom(nextRoom);
+      const joinedRoom = joinRemoteBattleRoom(
+        createdRoom,
+        "guest-client",
+        createdRoom.updatedAt + 1,
+        "Bob",
+      );
+      const guest = joinedRoom.guest;
+
+      room =
+        guest === null || createdRoom.host.character === null
+          ? joinedRoom
+          : {
+              ...joinedRoom,
+              status: "playing",
+              host: {
+                ...joinedRoom.host,
+                ready: true,
+              },
+              guest: {
+                ...guest,
+                character: createdRoom.host.character,
+                ready: true,
+              },
+            };
     },
     async getRoom() {
       return room;
