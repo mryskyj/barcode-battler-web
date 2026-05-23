@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { BrowserMultiFormatOneDReader } from "@zxing/browser";
-import { BarcodeFormat, DecodeHintType } from "@zxing/library";
+import { DecodeHintType } from "@zxing/library";
 import { validateScannedBarcode } from "../domain/scannedBarcodeValidation";
 import { requestCameraStream } from "./barcodeScannerCamera";
 import {
@@ -48,6 +48,11 @@ import {
 } from "./barcodeScannerFocus";
 import { createBarcodeScannerLogger } from "./barcodeScannerLogging";
 import { createBarcodeScannerHints } from "./barcodeScannerReader";
+import {
+  createNativeBarcodeDetector,
+  detectNativeBarcodes,
+  type NativeBarcodeDetection,
+} from "./barcodeNativeDetector";
 
 type ScannerResultPoint = {
   getX: () => number;
@@ -231,6 +236,7 @@ export function useBarcodeScanner({
     });
 
     const reader = new BrowserMultiFormatOneDReader(hints);
+    const nativeDetector = createNativeBarcodeDetector();
 
     function stopScanning() {
       if (scanTimeoutRef.current !== null) {
@@ -427,6 +433,17 @@ export function useBarcodeScanner({
                 applyScannerImageVariant(captureContext, imageVariant);
               }
 
+              if (
+                await tryNativeBarcodeDetector(
+                  nativeDetector,
+                  captureCanvas,
+                  frame,
+                  imageVariant,
+                )
+              ) {
+                return;
+              }
+
               try {
                 const result = reader.decodeFromCanvas(captureCanvas);
                 const barcode = result.getText().trim();
@@ -450,7 +467,7 @@ export function useBarcodeScanner({
                   validation.normalizedBarcode,
                   result,
                   frame,
-                  imageVariant,
+                  `zxing:${imageVariant}`,
                 );
                 return;
               } catch (error) {
@@ -476,10 +493,69 @@ export function useBarcodeScanner({
       scheduleNextScan();
     }
 
+    async function tryNativeBarcodeDetector(
+      nativeDetector: ReturnType<typeof createNativeBarcodeDetector>,
+      source: HTMLCanvasElement,
+      frame: ScannerFrame,
+      imageVariant: string,
+    ): Promise<boolean> {
+      try {
+        const results = await detectNativeBarcodes(nativeDetector, source);
+
+        if (results.length === 0) {
+          return false;
+        }
+
+        appendDebugEntry("native-detector-results", {
+          count: results.length,
+          orientation: frame.orientation,
+          imageVariant,
+          results: results.map((result) => ({
+            rawValue: result.rawValue,
+            format: result.format,
+            pointCount: result.points.length,
+          })),
+        });
+
+        for (const result of results) {
+          const validation = validateScannedBarcode(result.rawValue, undefined);
+
+          if (!validation.isValid) {
+            appendDebugEntry("scan-result-rejected", {
+              barcode: result.rawValue,
+              format: result.format,
+              reason: validation.reason,
+              source: "native",
+              orientation: frame.orientation,
+              imageVariant,
+            });
+            continue;
+          }
+
+          handleScanSuccess(
+            validation.normalizedBarcode,
+            createNativeResultAdapter(result),
+            frame,
+            `native:${imageVariant}`,
+          );
+          return true;
+        }
+      } catch (error) {
+        appendDebugEntry("native-detector-failed", {
+          orientation: frame.orientation,
+          imageVariant,
+          errorName: getScannerErrorName(error),
+          message: getScannerErrorMessage(error),
+        });
+      }
+
+      return false;
+    }
+
     function handleScanSuccess(
       barcode: string,
       result: {
-        getBarcodeFormat?: () => BarcodeFormat;
+        getBarcodeFormat?: () => unknown;
         getResultPoints: () => ScannerResultPoint[];
       },
       frame: ScannerFrame,
@@ -542,7 +618,8 @@ export function useBarcodeScanner({
 
         appendDebugEntry("scan-start", {
           tryHarder: true,
-          possibleFormats: "EAN_8,EAN_13,UPC_A,UPC_E",
+          possibleFormats: "EAN_8,EAN_13,UPC_A,UPC_E,native BarcodeDetector",
+          nativeBarcodeDetector: nativeDetector === null ? "unavailable" : "available",
           orientations: SCAN_ORIENTATIONS,
           imageVariants: SCANNER_IMAGE_VARIANTS,
           scanIntervalMs: SCAN_INTERVAL_MS,
@@ -675,4 +752,18 @@ function toScannerPoints(resultPoints: ScannerResultPoint[]): ScannerPoint[] {
     x: point.getX(),
     y: point.getY(),
   }));
+}
+
+function createNativeResultAdapter(result: NativeBarcodeDetection): {
+  getBarcodeFormat: () => string;
+  getResultPoints: () => ScannerResultPoint[];
+} {
+  return {
+    getBarcodeFormat: () => result.format,
+    getResultPoints: () =>
+      result.points.map((point) => ({
+        getX: () => point.x,
+        getY: () => point.y,
+      })),
+  };
 }
