@@ -645,10 +645,6 @@ function CharacterPrepScreen({
       <div className="character-scan-header">
         <p className="character-kicker">バーコードスキャン</p>
         <h2>キャラクターをよびだそう</h2>
-        <div className="character-scan-device" aria-hidden="true">
-          <span className="character-scan-beam" />
-          <span className="character-scan-card" />
-        </div>
       </div>
       <BarcodeForm
         barcode={barcode}

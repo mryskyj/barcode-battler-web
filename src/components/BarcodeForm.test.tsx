@@ -110,7 +110,7 @@ describe("BarcodeForm", () => {
     vi.restoreAllMocks();
   });
 
-  it("can open the camera scanner and fill the input from a detected barcode", async () => {
+  it("can open the camera scanner and show a detected barcode", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
 
@@ -130,7 +130,8 @@ describe("BarcodeForm", () => {
       expect(screen.queryByRole("button", { name: "カメラを閉じる" })).not.toBeInTheDocument();
     });
 
-    expect(screen.getByLabelText("バーコード")).toHaveValue("4901234567894");
+    expect(screen.getByText("読み取り結果")).toBeInTheDocument();
+    expect(screen.getByText("4901234567894")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "カメラを閉じる" })).not.toBeInTheDocument();
   });
 
@@ -150,8 +151,9 @@ describe("BarcodeForm", () => {
       expect(barcodeScannerMock.decodeFromCanvas).toHaveBeenCalled();
     });
 
-    expect(screen.getByLabelText("バーコード")).toHaveValue("");
+    expect(screen.queryByLabelText("バーコード")).not.toBeInTheDocument();
     expect(screen.queryByText(/読み取り成功:/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "数字を直接入力" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "カメラを閉じる" }).length).toBeGreaterThan(0);
   });
 
@@ -193,6 +195,47 @@ describe("BarcodeForm", () => {
 
     expect(await screen.findByText("読み取り結果")).toBeInTheDocument();
     expect(screen.getByText("4901234567894")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "数字を直接入力" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("stops the camera scanner when switching to manual entry", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <BarcodeFormHarness
+        onSubmit={vi.fn()}
+        scannerInitiallyOpen
+        manualEntryInitiallyVisible={false}
+      />,
+    );
+
+    expect(
+      screen.getByRole("region", { name: "カメラでバーコード読み取り" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "数字を直接入力" }));
+
+    expect(
+      screen.queryByRole("region", { name: "カメラでバーコード読み取り" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("バーコード")).toBeInTheDocument();
+  });
+
+  it("hides manual entry and keeps the manual link in the scanner when reopening the camera", async () => {
+    const user = userEvent.setup();
+
+    render(<BarcodeFormHarness onSubmit={vi.fn()} />);
+
+    await user.type(screen.getByLabelText("バーコード"), "4901234567894");
+    await user.click(screen.getByRole("button", { name: "カメラで読み取る" }));
+
+    expect(screen.queryByLabelText("バーコード")).not.toBeInTheDocument();
+    expect(screen.queryByText("読み取り結果")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "カメラでバーコード読み取り" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "数字を直接入力" })).toBeInTheDocument();
   });
 });

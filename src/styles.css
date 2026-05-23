@@ -618,39 +618,6 @@ input {
   font-weight: 800;
 }
 
-.character-scan-device {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: min(100%, 260px);
-  aspect-ratio: 5 / 3;
-  border-radius: 12px;
-  background: rgb(45 111 145 / 10%);
-  overflow: hidden;
-}
-
-.character-scan-beam {
-  position: absolute;
-  width: 78%;
-  height: 14px;
-  border-radius: 999px;
-  background: rgb(241 200 75 / 82%);
-  box-shadow: 0 0 18px rgb(241 200 75 / 48%);
-  transform: rotate(-6deg);
-}
-
-.character-scan-card {
-  position: relative;
-  width: 74px;
-  aspect-ratio: 3 / 4;
-  border: 3px solid #12151d;
-  border-radius: 8px;
-  background:
-    linear-gradient(90deg, #12151d 0 8%, transparent 8% 14%, #12151d 14% 23%, transparent 23% 31%, #12151d 31% 36%, transparent 36% 48%, #12151d 48% 60%, transparent 60% 66%, #12151d 66% 74%, transparent 74% 82%, #12151d 82% 88%, transparent 88% 100%) left bottom / 100% 24px no-repeat,
-    #fffdf2;
-  transform: rotate(-5deg);
-}
-
 .character-prep-panel .barcode-form-stack {
   border-radius: 8px;
   background: rgb(45 111 145 / 6%);
@@ -937,10 +904,18 @@ input {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .barcode-scanner-header strong {
   min-width: 0;
+}
+
+.barcode-scanner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .barcode-scanner-preview {

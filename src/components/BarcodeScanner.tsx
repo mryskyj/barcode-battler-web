@@ -4,11 +4,13 @@ import { useBarcodeScanner } from "./useBarcodeScanner";
 type BarcodeScannerProps = {
   onDetected: (barcode: string) => void;
   onClose: () => void;
+  onManualEntry?: () => void;
 };
 
 export function BarcodeScanner({
   onDetected,
   onClose,
+  onManualEntry,
 }: BarcodeScannerProps) {
   const {
     activeBox,
@@ -25,9 +27,20 @@ export function BarcodeScanner({
     <section className="barcode-scanner" aria-label="カメラでバーコード読み取り">
       <div className="barcode-scanner-header">
         <strong>カメラで読み取り</strong>
-        <button type="button" className="secondary-button" onClick={onClose}>
-          カメラを閉じる
-        </button>
+        <div className="barcode-scanner-actions">
+          {onManualEntry === undefined ? null : (
+            <button
+              type="button"
+              className="quiet-action-button"
+              onClick={onManualEntry}
+            >
+              数字を直接入力
+            </button>
+          )}
+          <button type="button" className="secondary-button" onClick={onClose}>
+            カメラを閉じる
+          </button>
+        </div>
       </div>
       <div ref={previewRef} className={`barcode-scanner-preview barcode-scanner-preview-${status}`}>
         <div className="barcode-scanner-overlay" aria-hidden="true">
