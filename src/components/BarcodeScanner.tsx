@@ -27,20 +27,6 @@ export function BarcodeScanner({
     <section className="barcode-scanner" aria-label="カメラでバーコード読み取り">
       <div className="barcode-scanner-header">
         <strong>カメラで読み取り</strong>
-        <div className="barcode-scanner-actions">
-          {onManualEntry === undefined ? null : (
-            <button
-              type="button"
-              className="quiet-action-button"
-              onClick={onManualEntry}
-            >
-              数字を直接入力
-            </button>
-          )}
-          <button type="button" className="secondary-button" onClick={onClose}>
-            カメラを閉じる
-          </button>
-        </div>
       </div>
       <div ref={previewRef} className={`barcode-scanner-preview barcode-scanner-preview-${status}`}>
         <div className="barcode-scanner-overlay" aria-hidden="true">
@@ -88,6 +74,20 @@ export function BarcodeScanner({
               : "カメラを起動できませんでした"}
       </p>
       {errorMessage === null ? null : <p className="field-error">{errorMessage}</p>}
+      <div className="barcode-scanner-actions">
+        {onManualEntry === undefined ? null : (
+          <button
+            type="button"
+            className="quiet-action-button"
+            onClick={onManualEntry}
+          >
+            数字を直接入力
+          </button>
+        )}
+        <button type="button" className="secondary-button" onClick={onClose}>
+          カメラを閉じる
+        </button>
+      </div>
       {scannerDebugEnabled ? (
         <BarcodeScannerDebugPanel entries={debugEntries} />
       ) : null}

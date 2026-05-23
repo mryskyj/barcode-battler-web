@@ -589,16 +589,16 @@ input {
 
 .character-prep-panel {
   display: grid;
-  gap: 16px;
+  gap: 10px;
   min-width: 0;
   width: min(100%, 360px);
   margin: 0 auto;
-  padding: 12px 0 20px;
+  padding: 0 0 14px;
 }
 
 .character-scan-header {
   display: grid;
-  gap: 10px;
+  gap: 4px;
   justify-items: center;
   min-width: 0;
   text-align: center;
@@ -607,7 +607,7 @@ input {
 .character-scan-header h2 {
   margin: 0;
   color: #12151d;
-  font-size: clamp(1.35rem, 7vw, 1.8rem);
+  font-size: clamp(1.22rem, 6vw, 1.58rem);
   line-height: 1.15;
 }
 
@@ -621,7 +621,16 @@ input {
 .character-prep-panel .barcode-form-stack {
   border-radius: 8px;
   background: rgb(45 111 145 / 6%);
-  padding: 12px;
+  padding: 8px;
+}
+
+.character-prep-panel .barcode-scanner {
+  gap: 8px;
+  padding: 8px;
+}
+
+.character-prep-panel .barcode-scanner-preview {
+  aspect-ratio: 16 / 10;
 }
 
 .character-prep-panel .field input {
@@ -900,11 +909,9 @@ input {
 }
 
 .barcode-scanner-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
 }
 
 .barcode-scanner-header strong {
@@ -912,10 +919,13 @@ input {
 }
 
 .barcode-scanner-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-  justify-content: flex-end;
+}
+
+.barcode-scanner-actions button {
+  min-width: 0;
 }
 
 .barcode-scanner-preview {
