@@ -1,8 +1,11 @@
 export type ScannerDebugEntry = {
   id: number;
+  createdAt: string;
   event: string;
   details: string;
 };
+
+export const SCANNER_DEBUG_ENTRY_LIMIT = 200;
 
 const SCANNER_DEBUG_STORAGE_KEY = "barcodeScannerDebug";
 const SCANNER_DEBUG_QUERY_KEY = "scannerDebug";

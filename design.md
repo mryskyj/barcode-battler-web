@@ -190,7 +190,8 @@ rooms/{roomId}
 - Android Chromeなど `BarcodeDetector` に対応する端末では、ZXingに加えてブラウザ標準のネイティブ検出も試す
 - 高解像度カメラや大きいCanvasが使えない端末では、カメラ制約とスキャンキャンバスサイズを段階的に下げて継続する
 - 対応端末ではカメラ起動時に継続オートフォーカスを要求し、スマホではプレビューをタッチした位置へフォーカス要求を送る。未対応ブラウザでは何もせずスキャンを継続する
-- Android実機調査中はスキャナーのデバッグログを通常表示する。非表示にしたい場合は `?scannerDebug=0` または `localStorage.setItem("barcodeScannerDebug", "0")` を指定する
+- Android実機調査中はスキャナーのデバッグログを通常表示する。直近200件を保持し、画面からJSONコピーまたはJSONファイル保存できるようにする。非表示にしたい場合は `?scannerDebug=0` または `localStorage.setItem("barcodeScannerDebug", "0")` を指定する
+- デバッグログには端末/ブラウザ情報、画面サイズ、セキュアコンテキスト、カメラトラックのlabel/状態/設定/Capability、読み取り失敗周期の要約を含める
 
 ### 読み取り結果バリデーション
 

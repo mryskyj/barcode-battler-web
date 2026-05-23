@@ -1109,12 +1109,34 @@ input {
   white-space: nowrap;
 }
 
+.barcode-scanner-debug-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.barcode-scanner-debug-actions button {
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px;
+  font-size: 0.86rem;
+}
+
+.barcode-scanner-debug-status {
+  margin: 0;
+  color: #2d6f91;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .barcode-scanner-debug-list {
   display: grid;
   gap: 6px;
+  max-height: min(46vh, 420px);
   margin: 0;
   padding: 0;
   list-style: none;
+  overflow: auto;
 }
 
 .barcode-scanner-debug-list li {
@@ -1128,6 +1150,11 @@ input {
 .barcode-scanner-debug-list strong {
   font-size: 0.82rem;
   color: #1f2937;
+}
+
+.barcode-scanner-debug-list small {
+  color: #78908d;
+  font-size: 0.72rem;
 }
 
 .barcode-scanner-debug-list span {

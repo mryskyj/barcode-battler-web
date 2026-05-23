@@ -17,6 +17,7 @@ import {
 import {
   formatScannerDetails,
   isBarcodeScannerDebugEnabled,
+  SCANNER_DEBUG_ENTRY_LIMIT,
   type ScannerDebugEntry,
 } from "./barcodeScannerDebug";
 import {
@@ -85,6 +86,7 @@ export function useBarcodeScanner({
   const previewSizeRef = useRef({ width: 0, height: 0 });
   const debugEntryIdRef = useRef(0);
   const candidateDebugSignatureRef = useRef("");
+  const scanCycleCountRef = useRef(0);
 
   const cameraAvailable =
     typeof globalThis.navigator !== "undefined" &&
@@ -132,10 +134,13 @@ export function useBarcodeScanner({
       debugEntryIdRef.current = id;
       const nextEntry: ScannerDebugEntry = {
         id,
+        createdAt: new Date().toISOString(),
         event,
         details: formatScannerDetails(details),
       };
-      setDebugEntries((currentEntries) => [...currentEntries, nextEntry].slice(-10));
+      setDebugEntries((currentEntries) =>
+        [...currentEntries, nextEntry].slice(-SCANNER_DEBUG_ENTRY_LIMIT),
+      );
     },
     [logScannerEvent, scannerDebugEnabled],
   );
@@ -490,6 +495,20 @@ export function useBarcodeScanner({
       }
 
       currentFrameRef.current = null;
+      scanCycleCountRef.current += 1;
+      if (scanCycleCountRef.current === 1 || scanCycleCountRef.current % 10 === 0) {
+        appendDebugEntry("scan-cycle-no-result", {
+          cycleCount: scanCycleCountRef.current,
+          videoWidth: video.videoWidth,
+          videoHeight: video.videoHeight,
+          previewWidth: previewSizeRef.current.width,
+          previewHeight: previewSizeRef.current.height,
+          scanIntervalMs: SCAN_INTERVAL_MS,
+          maxLongSides: SCAN_MAX_LONG_SIDES,
+          orientations: SCAN_ORIENTATIONS,
+          imageVariants: SCANNER_IMAGE_VARIANTS,
+        });
+      }
       scheduleNextScan();
     }
 
@@ -615,6 +634,7 @@ export function useBarcodeScanner({
         debugEntryIdRef.current = 0;
         setDebugEntries([]);
         candidateDebugSignatureRef.current = "";
+        scanCycleCountRef.current = 0;
 
         appendDebugEntry("scan-start", {
           tryHarder: true,
@@ -624,6 +644,7 @@ export function useBarcodeScanner({
           imageVariants: SCANNER_IMAGE_VARIANTS,
           scanIntervalMs: SCAN_INTERVAL_MS,
           maxLongSides: SCAN_MAX_LONG_SIDES,
+          environment: createScannerEnvironmentDetails(),
         });
 
         const stream = await requestCameraStream(
@@ -656,6 +677,10 @@ export function useBarcodeScanner({
           videoHeight: video.videoHeight,
           previewWidth: previewSizeRef.current.width,
           previewHeight: previewSizeRef.current.height,
+          trackLabel: videoTrack?.label,
+          trackEnabled: videoTrack?.enabled,
+          trackMuted: videoTrack?.muted,
+          trackReadyState: videoTrack?.readyState,
           trackSettings: videoTrack?.getSettings?.(),
           trackCapabilities: videoTrack?.getCapabilities?.(),
         });
@@ -765,5 +790,25 @@ function createNativeResultAdapter(result: NativeBarcodeDetection): {
         getX: () => point.x,
         getY: () => point.y,
       })),
+  };
+}
+
+function createScannerEnvironmentDetails() {
+  return {
+    userAgent: globalThis.navigator.userAgent,
+    platform: globalThis.navigator.platform,
+    language: globalThis.navigator.language,
+    hardwareConcurrency: globalThis.navigator.hardwareConcurrency,
+    deviceMemory: "deviceMemory" in globalThis.navigator
+      ? (globalThis.navigator as Navigator & { deviceMemory?: number }).deviceMemory
+      : undefined,
+    devicePixelRatio: globalThis.devicePixelRatio,
+    innerWidth: globalThis.innerWidth,
+    innerHeight: globalThis.innerHeight,
+    screenWidth: globalThis.screen?.width,
+    screenHeight: globalThis.screen?.height,
+    screenOrientation: globalThis.screen?.orientation?.type,
+    isSecureContext: globalThis.isSecureContext,
+    visibilityState: globalThis.document.visibilityState,
   };
 }
