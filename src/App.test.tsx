@@ -112,6 +112,9 @@ describe("App", () => {
 
     await prepareCharacter(user);
 
+    expect(screen.getByRole("region", { name: "対戦準備" })).toBeInTheDocument();
+    expect(screen.getByText("バトルメニュー")).toBeInTheDocument();
+    expect(screen.getByText("対戦をはじめよう")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "部屋を作る" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "部屋に参加する" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "部屋を作る" })).toBeEnabled();

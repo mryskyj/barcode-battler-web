@@ -104,6 +104,10 @@ input {
   background: #fffdf2;
 }
 
+.lobby-screen {
+  background: #fffdf2;
+}
+
 .title-emblem {
   display: grid;
   place-items: center;
@@ -403,7 +407,7 @@ input {
 
 .remote-lobby {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .ranking-panel {
@@ -658,11 +662,51 @@ input {
   display: grid;
   gap: 12px;
   min-width: 0;
+  border-radius: 10px;
+  background: rgb(45 111 145 / 7%);
+  padding: 14px;
 }
 
 .remote-lobby-panel h2 {
   margin: 0;
   font-size: 1rem;
+}
+
+.lobby-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.lobby-panel .profile-strip {
+  margin-bottom: 0;
+}
+
+.remote-lobby-heading {
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+
+.remote-lobby-heading p,
+.remote-lobby-heading h2 {
+  margin: 0;
+}
+
+.remote-lobby-heading p {
+  color: #2d6f91;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.remote-lobby-heading h2 {
+  color: #12151d;
+  font-size: clamp(1.35rem, 7vw, 1.8rem);
+  line-height: 1.15;
+}
+
+.remote-lobby-primary {
+  min-height: 56px;
+  background: #c84c42;
 }
 
 .room-id-display {
@@ -1246,7 +1290,4 @@ button:disabled {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .remote-lobby {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }

@@ -39,6 +39,11 @@ export function RemoteBattleLobby({
 
   return (
     <div className="remote-lobby">
+      <div className="remote-lobby-heading">
+        <p>バトルメニュー</p>
+        <h2>対戦をはじめよう</h2>
+      </div>
+
       <section className="remote-lobby-panel" aria-label="部屋を作る">
         <h2>部屋を作る</h2>
         {disabledMessage === null ? null : (
@@ -47,7 +52,12 @@ export function RemoteBattleLobby({
         {errorMessage === null ? null : (
           <p className="field-error">{errorMessage}</p>
         )}
-        <button type="button" onClick={onCreateRoom} disabled={!canCreateRoom}>
+        <button
+          type="button"
+          className="remote-lobby-primary"
+          onClick={onCreateRoom}
+          disabled={!canCreateRoom}
+        >
           部屋を作る
         </button>
         {createdRoomId === null ? null : (
@@ -77,7 +87,7 @@ export function RemoteBattleLobby({
       </section>
 
       <section className="remote-lobby-panel" aria-label="ランキングを見る">
-        <h2>ランキング</h2>
+        <h2>ランキングを見る</h2>
         <button type="button" className="secondary-button" onClick={onShowRanking}>
           ランキングを見る
         </button>

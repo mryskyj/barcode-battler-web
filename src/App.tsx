@@ -484,9 +484,9 @@ export function App({
           onBackToTitle={backToTitle}
         />
       ) : (
-        <section className="setup-panel" aria-label="キャラクター生成">
+        <section className="screen screen-center lobby-screen" aria-label="対戦準備">
           {remoteSession === null ? (
-            <>
+            <div className="content-narrow lobby-panel">
               <ProfileStrip
                 profile={playerProfile}
                 onEditProfile={() => setScreen("profile")}
@@ -511,7 +511,7 @@ export function App({
                 onJoinRoom={joinRemoteRoom}
                 onShowRanking={showRanking}
               />
-            </>
+            </div>
           ) : (
             <RemoteBattleSetup
               roomId={remoteSession.roomId}
