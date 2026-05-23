@@ -73,6 +73,8 @@ type AppProps = {
   random?: () => number;
 };
 
+type AppPreview = "battle" | null;
+
 export function App({
   remoteRepository,
   rankingRepository,
@@ -415,6 +417,22 @@ export function App({
     }
   }
 
+  const preview = getAppPreview(import.meta.env.DEV);
+  if (preview === "battle") {
+    return (
+      <main className="app-shell">
+        <RemoteBattleView
+          room={createBattlePreviewRoom()}
+          role="host"
+          errorMessage={null}
+          rankingErrorMessage={null}
+          onCommand={() => undefined}
+          onBackToSetup={() => undefined}
+        />
+      </main>
+    );
+  }
+
   const activeScreen = getActiveScreen(screen, remoteSession, remoteRoom);
 
   return (
@@ -581,6 +599,7 @@ function RemoteBattleView({
           opponentCombatant={role === "host" ? guestCombatant : hostCombatant}
           selfName={ownParticipant?.displayName ?? "自分"}
           selfCombatant={role === "host" ? hostCombatant : guestCombatant}
+          latestLog={room.battle.log.at(-1) ?? null}
         />
 
         <section className="control-panel battle-hud" aria-label="通信対戦操作">
@@ -818,6 +837,67 @@ function getRemoteCombatant(
     currentHp: participant.character.stats.hp,
     charged: false,
     guarding: false,
+  };
+}
+
+function getAppPreview(devMode: boolean): AppPreview {
+  if (!devMode || typeof globalThis.location === "undefined") {
+    return null;
+  }
+
+  const preview = new URLSearchParams(globalThis.location.search).get("preview");
+  return preview === "battle" ? "battle" : null;
+}
+
+function createBattlePreviewRoom(): RemoteBattleRoom {
+  const hostCharacter = createCharacter("4901301008473", "スキャンナイト");
+  const guestCharacter = createCharacter("4901234567894", "コードドラゴン");
+
+  return {
+    roomId: "PREVIEW",
+    status: "playing",
+    host: {
+      role: "host",
+      clientId: "preview-host",
+      displayName: "PLAYER",
+      connected: true,
+      character: hostCharacter,
+      ready: true,
+      selectedCommand: null,
+    },
+    guest: {
+      role: "guest",
+      clientId: "preview-guest",
+      displayName: "RIVAL",
+      connected: true,
+      character: guestCharacter,
+      ready: true,
+      selectedCommand: null,
+    },
+    battle: {
+      round: 3,
+      host: {
+        character: hostCharacter,
+        currentHp: Math.max(0, hostCharacter.stats.hp - 42),
+        charged: false,
+        guarding: false,
+      },
+      guest: {
+        character: guestCharacter,
+        currentHp: Math.max(0, guestCharacter.stats.hp - 68),
+        charged: true,
+        guarding: false,
+      },
+      log: [
+        "通信対戦開始",
+        "ゲストは「ためる」で力をためた",
+        "ホストの「たたかう」。28ダメージ。",
+        "ゲストの「ひっさつ」は外れた",
+        "ホストの「たたかう」。40ダメージ。",
+      ],
+      winner: null,
+    },
+    updatedAt: 0,
   };
 }
 

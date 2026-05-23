@@ -1,10 +1,12 @@
 import type { Combatant } from "../domain/battle";
+import { createBattleEventSummary } from "./battleEventSummary";
 
 type BattleStageProps = {
   opponentName: string;
   opponentCombatant: Combatant | null;
   selfName: string;
   selfCombatant: Combatant | null;
+  latestLog?: string | null;
 };
 
 export function BattleStage({
@@ -12,7 +14,10 @@ export function BattleStage({
   opponentCombatant,
   selfName,
   selfCombatant,
+  latestLog = null,
 }: BattleStageProps) {
+  const eventSummary = createBattleEventSummary(latestLog);
+
   return (
     <section className="battle-stage" aria-label="バトルステージ">
       <BattleActor
@@ -21,8 +26,18 @@ export function BattleStage({
         name={opponentName}
         combatant={opponentCombatant}
       />
-      <div className="battle-field" aria-hidden="true">
+      <div className="battle-field">
         <span>VS</span>
+        {eventSummary === null ? null : (
+          <div
+            className={`battle-event battle-event-${eventSummary.type}`}
+            role="status"
+            aria-live="polite"
+          >
+            <strong>{eventSummary.title}</strong>
+            <small>{eventSummary.detail}</small>
+          </div>
+        )}
       </div>
       <BattleActor position="self" label="自分" name={selfName} combatant={selfCombatant} />
     </section>

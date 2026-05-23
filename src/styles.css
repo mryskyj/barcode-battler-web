@@ -1297,10 +1297,65 @@ button:disabled {
 .battle-field {
   display: grid;
   place-items: center;
-  min-height: 42px;
+  gap: 8px;
+  min-height: 92px;
   color: #c84c42;
   font-size: 1.15rem;
   font-weight: 900;
+}
+
+.battle-field > span {
+  line-height: 1;
+}
+
+.battle-event {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: min(100%, 172px);
+  border-radius: 8px;
+  background: #fff4c8;
+  padding: 8px 12px;
+  text-align: center;
+  box-shadow: inset 0 0 0 2px rgb(200 76 66 / 20%);
+}
+
+.battle-event strong {
+  color: #c84c42;
+  font-size: clamp(2rem, 11vw, 3.8rem);
+  line-height: 0.95;
+}
+
+.battle-event small {
+  color: #5b4038;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.battle-event-miss,
+.battle-event-guard {
+  background: #e6efed;
+  box-shadow: inset 0 0 0 2px rgb(45 111 145 / 20%);
+}
+
+.battle-event-miss strong,
+.battle-event-guard strong {
+  color: #2d6f91;
+  font-size: clamp(1.55rem, 8vw, 2.7rem);
+}
+
+.battle-event-charge {
+  background: #fff6df;
+  box-shadow: inset 0 0 0 2px rgb(218 157 54 / 24%);
+}
+
+.battle-event-charge strong {
+  color: #a86c16;
+  font-size: clamp(1.45rem, 8vw, 2.5rem);
+}
+
+.battle-event-win strong {
+  font-size: clamp(1.45rem, 8vw, 2.5rem);
 }
 
 .battle-hp {

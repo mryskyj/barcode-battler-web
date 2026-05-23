@@ -15,6 +15,7 @@ import type { FirebaseRoomRepository } from "./network/firebaseRoomRepository";
 describe("App", () => {
   beforeEach(() => {
     globalThis.localStorage.clear();
+    globalThis.history.pushState({}, "", "/");
   });
 
   afterEach(() => {
@@ -27,6 +28,17 @@ describe("App", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "バーコードバトラー" }),
     ).toBeInTheDocument();
+  });
+
+  it("can show the battle preview directly in development", () => {
+    globalThis.history.pushState({}, "", "/?preview=battle");
+
+    render(<App />);
+
+    expect(screen.getByRole("region", { name: "通信対戦" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "バトルステージ" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("-40");
+    expect(screen.queryByRole("region", { name: "タイトル" })).not.toBeInTheDocument();
   });
 
   it("shows the title screen first", () => {
