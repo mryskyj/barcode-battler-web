@@ -440,13 +440,15 @@ export function App({
           </div>
         </section>
       ) : activeScreen === "ranking" ? (
-        <section className="setup-panel" aria-label="ランキング画面">
-          <RankingBoard
-            entries={rankingEntries}
-            loading={rankingLoading}
-            errorMessage={rankingError}
-            onBackToTitle={backToTitle}
-          />
+        <section className="screen screen-center ranking-screen" aria-label="ランキング画面">
+          <div className="content-narrow">
+            <RankingBoard
+              entries={rankingEntries}
+              loading={rankingLoading}
+              errorMessage={rankingError}
+              onBackToTitle={backToTitle}
+            />
+          </div>
         </section>
       ) : activeScreen === "character" ? (
         <section className="screen screen-center character-screen" aria-label="キャラクター準備">

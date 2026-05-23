@@ -137,6 +137,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "ランキングを見る" }));
 
     expect(await screen.findByRole("region", { name: "ランキング" })).toBeInTheDocument();
+    expect(screen.getByText("スコアボード")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "タイトルに戻る" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "更新" })).not.toBeInTheDocument();
     expect(
@@ -145,8 +146,10 @@ describe("App", () => {
     expect(
       screen.queryByRole("button", { name: "もう一回対戦" }),
     ).not.toBeInTheDocument();
+    expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("3勝")).toBeInTheDocument();
+    expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 

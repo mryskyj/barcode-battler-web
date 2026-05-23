@@ -410,52 +410,92 @@ input {
   gap: 14px;
 }
 
+.ranking-screen {
+  background: #eef2f3;
+}
+
 .ranking-panel {
   display: grid;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
-  margin-top: 12px;
+  border-radius: 10px;
+  background: #fffdf2;
+  padding: 18px 14px;
 }
 
 .ranking-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  gap: 4px;
+  text-align: center;
 }
 
-.ranking-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.ranking-header p,
+.ranking-header h2 {
+  margin: 0;
+}
+
+.ranking-header p {
+  color: #2d6f91;
+  font-size: 0.88rem;
+  font-weight: 900;
 }
 
 .ranking-header h2 {
-  margin: 0;
-  font-size: 1rem;
+  color: #12151d;
+  font-size: clamp(1.5rem, 8vw, 2.15rem);
+  line-height: 1.1;
 }
 
 .ranking-list {
   display: grid;
   gap: 8px;
   margin: 0;
-  padding-left: 24px;
+  padding: 0;
+  list-style: none;
 }
 
 .ranking-entry {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
-  gap: 8px;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 6px 8px;
   align-items: center;
   min-width: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #f3f6f6;
-  padding: 10px 12px;
+  padding: 10px;
+}
+
+.ranking-rank {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  color: #fffdf2;
+  background: #2d6f91;
+  font-weight: 900;
 }
 
 .ranking-entry strong {
   min-width: 0;
+  color: #12151d;
+  font-size: 1.05rem;
   overflow-wrap: anywhere;
+}
+
+.ranking-score {
+  color: #c84c42;
+  font-weight: 900;
+}
+
+.ranking-entry span:not(.ranking-rank, .ranking-score) {
+  color: #58706d;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.ranking-actions {
+  display: grid;
 }
 
 .profile-panel {
@@ -1446,28 +1486,19 @@ button:disabled {
   }
 
   .ranking-header {
-    align-items: stretch;
-    flex-direction: column;
+    text-align: center;
   }
 
   .ranking-actions {
-    flex-direction: column;
+    width: 100%;
   }
 
   .profile-strip {
     grid-template-columns: 1fr;
   }
 
-  .ranking-list {
-    padding-left: 18px;
-  }
-
   .ranking-entry {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .ranking-entry strong {
-    grid-column: 1 / -1;
+    grid-template-columns: 30px minmax(0, 1fr) auto;
   }
 
   .room-id-display {
