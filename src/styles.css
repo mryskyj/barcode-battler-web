@@ -934,6 +934,7 @@ input {
   border-radius: 6px;
   background: #dfe5e7;
   aspect-ratio: 4 / 3;
+  touch-action: manipulation;
 }
 
 .barcode-scanner-preview-success {
@@ -974,6 +975,17 @@ input {
     0 0 0 1px rgba(239, 255, 221, 0.28) inset,
     0 0 22px rgba(136, 255, 107, 0.42);
   animation: barcode-target-success 0.42s ease-out 1;
+}
+
+.barcode-scanner-focus-point {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border: 2px solid #e8ffcb;
+  border-radius: 999px;
+  box-shadow: 0 0 16px rgba(232, 255, 203, 0.42);
+  transform: translate(-50%, -50%);
+  animation: barcode-focus-point 0.9s ease-out 1;
 }
 
 .barcode-scanner-success-banner {
@@ -1029,6 +1041,23 @@ input {
   100% {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes barcode-focus-point {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.3);
+  }
+
+  18%,
+  74% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.72);
   }
 }
 

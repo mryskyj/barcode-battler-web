@@ -17,6 +17,7 @@ export function BarcodeScanner({
     debugEntries,
     detectedBarcode,
     errorMessage,
+    focusPoint,
     previewRef,
     scannerDebugEnabled,
     status,
@@ -49,6 +50,15 @@ export function BarcodeScanner({
               <strong>{detectedBarcode ?? ""}</strong>
             </div>
           ) : null}
+          {focusPoint === null ? null : (
+            <span
+              className="barcode-scanner-focus-point"
+              style={{
+                left: `${focusPoint.x}px`,
+                top: `${focusPoint.y}px`,
+              }}
+            />
+          )}
         </div>
         <video
           ref={videoRef}

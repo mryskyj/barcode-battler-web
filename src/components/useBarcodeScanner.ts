@@ -40,6 +40,12 @@ import {
   SCANNER_IMAGE_VARIANTS,
   applyScannerImageVariant,
 } from "./barcodeScannerImage";
+import {
+  applyContinuousCameraFocus,
+  createFocusPointFromPreviewEvent,
+  focusCameraAtPoint,
+  getFocusPointTimeoutMs,
+} from "./barcodeScannerFocus";
 import { createBarcodeScannerLogger } from "./barcodeScannerLogging";
 import { createBarcodeScannerHints } from "./barcodeScannerReader";
 
@@ -67,6 +73,7 @@ export function useBarcodeScanner({
   const successCloseTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const cameraSessionTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
+  const focusPointTimeoutRef = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const currentFrameRef = useRef<ScannerFrame | null>(null);
   const onDetectedRef = useRef(onDetected);
   const onCloseRef = useRef(onClose);
@@ -86,6 +93,7 @@ export function useBarcodeScanner({
   const [detectedBarcode, setDetectedBarcode] = useState<string | null>(null);
   const [candidatePoints, setCandidatePoints] = useState<ScannerPoint[]>([]);
   const [successPoints, setSuccessPoints] = useState<ScannerPoint[]>([]);
+  const [focusPoint, setFocusPoint] = useState<ScannerPoint | null>(null);
   const [videoSize, setVideoSize] = useState({ width: 0, height: 0 });
   const [previewSize, setPreviewSize] = useState({ width: 0, height: 0 });
   const [debugEntries, setDebugEntries] = useState<ScannerDebugEntry[]>([]);
@@ -248,6 +256,47 @@ export function useBarcodeScanner({
 
     function handlePageHidden() {
       closeScanner("page-hidden");
+    }
+
+    async function focusAtPreviewPoint(event: PointerEvent) {
+      const preview = previewRef.current;
+      const stream = streamRef.current;
+
+      if (preview === null || stream === null) {
+        return;
+      }
+
+      const point = createFocusPointFromPreviewEvent(
+        event,
+        preview.getBoundingClientRect(),
+      );
+
+      try {
+        const result = await focusCameraAtPoint(stream, point);
+        appendDebugEntry("camera-focus-requested", result);
+
+        if (!result.applied || result.point === null) {
+          return;
+        }
+
+        setFocusPoint({
+          x: result.point.x * previewSizeRef.current.width,
+          y: result.point.y * previewSizeRef.current.height,
+        });
+
+        if (focusPointTimeoutRef.current !== null) {
+          globalThis.clearTimeout(focusPointTimeoutRef.current);
+        }
+        focusPointTimeoutRef.current = globalThis.setTimeout(() => {
+          setFocusPoint(null);
+          focusPointTimeoutRef.current = null;
+        }, getFocusPointTimeoutMs());
+      } catch (error) {
+        appendDebugEntry("camera-focus-failed", {
+          errorName: getScannerErrorName(error),
+          message: getScannerErrorMessage(error),
+        });
+      }
     }
 
     function updateCandidatePreview(point: ScannerPoint) {
@@ -514,6 +563,17 @@ export function useBarcodeScanner({
         video.srcObject = stream;
         await video.play();
         const [videoTrack] = stream.getVideoTracks();
+        try {
+          appendDebugEntry(
+            "camera-continuous-focus",
+            await applyContinuousCameraFocus(stream),
+          );
+        } catch (error) {
+          appendDebugEntry("camera-continuous-focus-failed", {
+            errorName: getScannerErrorName(error),
+            message: getScannerErrorMessage(error),
+          });
+        }
         appendDebugEntry("camera-ready", {
           videoWidth: video.videoWidth,
           videoHeight: video.videoHeight,
@@ -544,6 +604,8 @@ export function useBarcodeScanner({
     }, CAMERA_SESSION_TIMEOUT_MS);
     globalThis.document.addEventListener("visibilitychange", handleVisibilityChange);
     globalThis.addEventListener("pagehide", handlePageHidden);
+    const previewElement = previewRef.current;
+    previewElement?.addEventListener("pointerdown", focusAtPreviewPoint);
 
     void startScanning();
 
@@ -552,6 +614,7 @@ export function useBarcodeScanner({
       stopScanning();
       globalThis.document.removeEventListener("visibilitychange", handleVisibilityChange);
       globalThis.removeEventListener("pagehide", handlePageHidden);
+      previewElement?.removeEventListener("pointerdown", focusAtPreviewPoint);
       streamRef.current?.getTracks().forEach((track) => track.stop());
       video.srcObject = null;
       streamRef.current = null;
@@ -567,6 +630,10 @@ export function useBarcodeScanner({
       if (cameraSessionTimeoutRef.current !== null) {
         globalThis.clearTimeout(cameraSessionTimeoutRef.current);
         cameraSessionTimeoutRef.current = null;
+      }
+      if (focusPointTimeoutRef.current !== null) {
+        globalThis.clearTimeout(focusPointTimeoutRef.current);
+        focusPointTimeoutRef.current = null;
       }
     };
   }, [appendDebugEntry, cameraAvailable]);
@@ -595,6 +662,7 @@ export function useBarcodeScanner({
     debugEntries,
     detectedBarcode,
     errorMessage,
+    focusPoint,
     previewRef,
     scannerDebugEnabled,
     status,
