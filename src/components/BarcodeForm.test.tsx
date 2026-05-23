@@ -170,9 +170,42 @@ describe("BarcodeForm", () => {
     const logPanel = screen.getByLabelText("バーコードスキャナーログ");
     expect(within(logPanel).getByText("scan-start")).toBeInTheDocument();
   });
+
+  it("can start with the camera scanner and keep manual entry hidden", async () => {
+    const onSubmit = vi.fn();
+
+    render(
+      <BarcodeFormHarness
+        onSubmit={onSubmit}
+        scannerInitiallyOpen
+        manualEntryInitiallyVisible={false}
+      />,
+    );
+
+    expect(
+      screen.getByRole("region", { name: "カメラでバーコード読み取り" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("バーコード")).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(barcodeScannerMock.decodeFromCanvas).toHaveBeenCalled();
+    });
+
+    expect(await screen.findByText("読み取り結果")).toBeInTheDocument();
+    expect(screen.getByText("4901234567894")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "数字を直接入力" })).toBeInTheDocument();
+  });
 });
 
-function BarcodeFormHarness({ onSubmit }: { onSubmit: () => void }) {
+function BarcodeFormHarness({
+  manualEntryInitiallyVisible,
+  onSubmit,
+  scannerInitiallyOpen,
+}: {
+  manualEntryInitiallyVisible?: boolean;
+  onSubmit: () => void;
+  scannerInitiallyOpen?: boolean;
+}) {
   const [barcode, setBarcode] = useState("");
 
   return (
@@ -182,6 +215,8 @@ function BarcodeFormHarness({ onSubmit }: { onSubmit: () => void }) {
       canSubmit={true}
       onBarcodeChange={setBarcode}
       onSubmit={onSubmit}
+      scannerInitiallyOpen={scannerInitiallyOpen}
+      manualEntryInitiallyVisible={manualEntryInitiallyVisible}
     />
   );
 }

@@ -100,6 +100,10 @@ input {
   background: #fffdf2;
 }
 
+.character-screen {
+  background: #fffdf2;
+}
+
 .title-emblem {
   display: grid;
   place-items: center;
@@ -346,6 +350,15 @@ input {
   text-underline-offset: 3px;
 }
 
+.quiet-action-button {
+  min-height: 32px;
+  color: #17443d;
+  background: transparent;
+  font-size: 0.86rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .mode-selector {
   display: grid;
   gap: 8px;
@@ -530,6 +543,85 @@ input {
   overflow-wrap: anywhere;
 }
 
+.character-prep-panel {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  width: min(100%, 360px);
+  margin: 0 auto;
+  padding: 12px 0 20px;
+}
+
+.character-scan-header {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.character-scan-header h2 {
+  margin: 0;
+  color: #12151d;
+  font-size: clamp(1.35rem, 7vw, 1.8rem);
+  line-height: 1.15;
+}
+
+.character-kicker {
+  margin: 0;
+  color: #2d6f91;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.character-scan-device {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 260px);
+  aspect-ratio: 5 / 3;
+  border-radius: 12px;
+  background: rgb(45 111 145 / 10%);
+  overflow: hidden;
+}
+
+.character-scan-beam {
+  position: absolute;
+  width: 78%;
+  height: 14px;
+  border-radius: 999px;
+  background: rgb(241 200 75 / 82%);
+  box-shadow: 0 0 18px rgb(241 200 75 / 48%);
+  transform: rotate(-6deg);
+}
+
+.character-scan-card {
+  position: relative;
+  width: 74px;
+  aspect-ratio: 3 / 4;
+  border: 3px solid #12151d;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, #12151d 0 8%, transparent 8% 14%, #12151d 14% 23%, transparent 23% 31%, #12151d 31% 36%, transparent 36% 48%, #12151d 48% 60%, transparent 60% 66%, #12151d 66% 74%, transparent 74% 82%, #12151d 82% 88%, transparent 88% 100%) left bottom / 100% 24px no-repeat,
+    #fffdf2;
+  transform: rotate(-5deg);
+}
+
+.character-prep-panel .barcode-form-stack {
+  border-radius: 8px;
+  background: rgb(45 111 145 / 6%);
+  padding: 12px;
+}
+
+.character-prep-panel .field input {
+  border-color: #2d6f91;
+}
+
+.character-prep-panel .field input:focus {
+  outline: 3px solid rgb(45 111 145 / 24%);
+  outline-offset: 2px;
+}
+
 .remote-setup {
   display: grid;
   gap: 12px;
@@ -612,6 +704,36 @@ input {
 .barcode-form-stack {
   display: grid;
   gap: 12px;
+}
+
+.barcode-scan-note,
+.barcode-detected-value {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  border-radius: 8px;
+  background: rgb(255 253 242 / 82%);
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.barcode-scan-note {
+  color: #58706d;
+  font-weight: 700;
+}
+
+.barcode-detected-value span {
+  color: #58706d;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.barcode-detected-value strong {
+  min-width: 0;
+  color: #12151d;
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
 }
 
 .field {

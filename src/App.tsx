@@ -85,7 +85,7 @@ export function App({
   const [remoteSession, setRemoteSession] = useState<RemoteSession | null>(null);
   const [remoteRoom, setRemoteRoom] = useState<RemoteBattleRoom | null>(null);
   const [remoteError, setRemoteError] = useState<string | null>(null);
-  const [remoteBarcode, setRemoteBarcode] = useState("4901234567894");
+  const [remoteBarcode, setRemoteBarcode] = useState("");
   const [preparedCharacter, setPreparedCharacter] = useState<Character | null>(null);
   const [remoteReady, setRemoteReady] = useState(false);
   const [screen, setScreen] = useState<AppScreen>("title");
@@ -449,20 +449,18 @@ export function App({
           />
         </section>
       ) : activeScreen === "character" ? (
-        <section className="setup-panel" aria-label="キャラクター準備">
-          <ProfileStrip
-            profile={playerProfile}
-            onEditProfile={() => setScreen("profile")}
-          />
-          <BarcodeForm
-            barcode={remoteBarcode}
-            errorMessage={remoteBarcodeValidation.message}
-            canSubmit={remoteBarcodeValidation.isValid}
-            onBarcodeChange={changeRemoteBarcode}
-            onSubmit={prepareRemoteCharacter}
-            submitLabel="キャラクター準備"
-            label="自分のバーコード"
-          />
+        <section className="screen screen-center character-screen" aria-label="キャラクター準備">
+          <div className="content-narrow">
+            <CharacterPrepScreen
+              barcode={remoteBarcode}
+              errorMessage={
+                remoteBarcode.length === 0 ? null : remoteBarcodeValidation.message
+              }
+              canSubmit={remoteBarcodeValidation.isValid}
+              onBarcodeChange={changeRemoteBarcode}
+              onSubmit={prepareRemoteCharacter}
+            />
+          </div>
         </section>
       ) : remoteSession !== null &&
       remoteRoom !== null &&
@@ -621,6 +619,44 @@ function RemoteBattleView({
 
       <BattleLog
         entries={room.battle.log.length === 0 ? ["通信対戦開始"] : room.battle.log}
+      />
+    </div>
+  );
+}
+
+function CharacterPrepScreen({
+  barcode,
+  errorMessage,
+  canSubmit,
+  onBarcodeChange,
+  onSubmit,
+}: {
+  barcode: string;
+  errorMessage: string | null;
+  canSubmit: boolean;
+  onBarcodeChange: (barcode: string) => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <div className="character-prep-panel">
+      <div className="character-scan-header">
+        <p className="character-kicker">バーコードスキャン</p>
+        <h2>キャラクターをよびだそう</h2>
+        <div className="character-scan-device" aria-hidden="true">
+          <span className="character-scan-beam" />
+          <span className="character-scan-card" />
+        </div>
+      </div>
+      <BarcodeForm
+        barcode={barcode}
+        errorMessage={errorMessage}
+        canSubmit={canSubmit}
+        onBarcodeChange={onBarcodeChange}
+        onSubmit={onSubmit}
+        submitLabel="キャラクター準備"
+        label="自分のバーコード"
+        scannerInitiallyOpen
+        manualEntryInitiallyVisible={false}
       />
     </div>
   );

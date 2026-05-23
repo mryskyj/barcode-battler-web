@@ -11,6 +11,8 @@ type BarcodeFormProps = {
   onSubmit: () => void;
   submitLabel?: string;
   label?: string;
+  scannerInitiallyOpen?: boolean;
+  manualEntryInitiallyVisible?: boolean;
 };
 
 export function BarcodeForm({
@@ -21,8 +23,13 @@ export function BarcodeForm({
   onSubmit,
   submitLabel = "生成して戦う",
   label = "バーコード",
+  scannerInitiallyOpen = false,
+  manualEntryInitiallyVisible = true,
 }: BarcodeFormProps) {
-  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(scannerInitiallyOpen);
+  const [manualEntryVisible, setManualEntryVisible] = useState(
+    manualEntryInitiallyVisible,
+  );
   const [scannerError, setScannerError] = useState<string | null>(null);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -59,17 +66,26 @@ export function BarcodeForm({
   return (
     <div className="barcode-form-stack">
       <form className="barcode-form" onSubmit={handleSubmit}>
-        <label className="field">
-          <span>{label}</span>
-          <input
-            value={barcode}
-            onChange={(event) => onBarcodeChange(event.target.value)}
-            inputMode="numeric"
-            placeholder="4901234567894"
-            aria-invalid={errorMessage === null ? undefined : true}
-            aria-describedby={errorMessage === null ? undefined : "barcode-error"}
-          />
-        </label>
+        {manualEntryVisible ? (
+          <label className="field">
+            <span>{label}</span>
+            <input
+              value={barcode}
+              onChange={(event) => onBarcodeChange(event.target.value)}
+              inputMode="numeric"
+              placeholder="4901234567894"
+              aria-invalid={errorMessage === null ? undefined : true}
+              aria-describedby={errorMessage === null ? undefined : "barcode-error"}
+            />
+          </label>
+        ) : barcode.length === 0 ? (
+          <p className="barcode-scan-note">バーコードをカメラにかざしてください</p>
+        ) : (
+          <p className="barcode-detected-value">
+            <span>読み取り結果</span>
+            <strong>{barcode}</strong>
+          </p>
+        )}
         {errorMessage === null ? null : (
           <p className="field-error" id="barcode-error">
             {errorMessage}
@@ -82,13 +98,20 @@ export function BarcodeForm({
           <button type="submit" disabled={!canSubmit}>
             {submitLabel}
           </button>
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={scannerOpen ? handleCameraClose : handleCameraOpen}
-          >
-            {scannerOpen ? "カメラを閉じる" : "カメラで読み取る"}
-          </button>
+          {scannerOpen ? null : (
+            <button type="button" className="secondary-button" onClick={handleCameraOpen}>
+              カメラで読み取る
+            </button>
+          )}
+          {manualEntryVisible ? null : (
+            <button
+              type="button"
+              className="quiet-action-button"
+              onClick={() => setManualEntryVisible(true)}
+            >
+              数字を直接入力
+            </button>
+          )}
         </div>
       </form>
       {scannerOpen ? (

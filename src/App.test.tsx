@@ -59,7 +59,7 @@ describe("App", () => {
 
   it("saves and updates the player display name", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    const { unmount } = render(<App />);
 
     await user.click(screen.getByRole("button", { name: "はじめる" }));
 
@@ -69,10 +69,15 @@ describe("App", () => {
     await user.type(screen.getByLabelText("ユーザー名"), " Alice ");
     await user.click(screen.getByRole("button", { name: "ユーザー名を保存" }));
 
-    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getByText("バーコードスキャン")).toBeInTheDocument();
+    expect(screen.getByText("キャラクターをよびだそう")).toBeInTheDocument();
+    expect(screen.queryByText("Alice")).not.toBeInTheDocument();
     expect(globalThis.localStorage.getItem("barcodeBattler.playerProfile")).toContain(
       "\"displayName\":\"Alice\"",
     );
+
+    unmount();
+    render(<App />);
 
     await user.click(screen.getByRole("button", { name: "ユーザー名を変更" }));
     expect(screen.getByText("プレイヤーへんこう")).toBeInTheDocument();
@@ -81,7 +86,10 @@ describe("App", () => {
     await user.type(screen.getByLabelText("ユーザー名"), "Bob");
     await user.click(screen.getByRole("button", { name: "変更を保存" }));
 
-    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.queryByText("Bob")).not.toBeInTheDocument();
+    expect(globalThis.localStorage.getItem("barcodeBattler.playerProfile")).toContain(
+      "\"displayName\":\"Bob\"",
+    );
   });
 
   it("shows remote battle room creation and join controls", async () => {
@@ -93,6 +101,13 @@ describe("App", () => {
     expect(
       screen.getByRole("region", { name: "キャラクター準備" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("バーコードスキャン")).toBeInTheDocument();
+    expect(screen.getByText("キャラクターをよびだそう")).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "カメラでバーコード読み取り" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "数字を直接入力" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("自分のバーコード")).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "部屋を作る" })).not.toBeInTheDocument();
 
     await prepareCharacter(user);
@@ -251,6 +266,7 @@ describe("App", () => {
     render(<App remoteRepository={createTestRemoteRepository()} />);
 
     await saveDisplayName(user, "Alice");
+    await user.click(screen.getByRole("button", { name: "数字を直接入力" }));
     await user.clear(await screen.findByLabelText("自分のバーコード"));
     await user.type(screen.getByLabelText("自分のバーコード"), "123");
 
@@ -357,6 +373,15 @@ async function saveDisplayName(
 }
 
 async function prepareCharacter(user: ReturnType<typeof userEvent.setup>) {
+  const manualEntryButton = screen.queryByRole("button", {
+    name: "数字を直接入力",
+  });
+
+  if (manualEntryButton !== null) {
+    await user.click(manualEntryButton);
+    await user.type(screen.getByLabelText("自分のバーコード"), "4901234567894");
+  }
+
   await user.click(screen.getByRole("button", { name: "キャラクター準備" }));
 }
 
