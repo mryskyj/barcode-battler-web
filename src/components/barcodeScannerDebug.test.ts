@@ -5,34 +5,34 @@ import {
 } from "./barcodeScannerDebug";
 
 describe("barcodeScannerDebug", () => {
-  it("keeps scanner debug disabled by default", () => {
+  it("keeps scanner debug enabled by default for camera investigation", () => {
     expect(
       isBarcodeScannerDebugEnabled(
         true,
         { search: "" },
         { getItem: () => null },
       ),
-    ).toBe(false);
-  });
-
-  it("enables scanner debug from query string in dev mode", () => {
-    expect(
-      isBarcodeScannerDebugEnabled(
-        true,
-        { search: "?scannerDebug=1" },
-        { getItem: () => null },
-      ),
     ).toBe(true);
   });
 
-  it("does not expose scanner debug in production mode", () => {
+  it("can disable scanner debug from query string", () => {
+    expect(
+      isBarcodeScannerDebugEnabled(
+        true,
+        { search: "?scannerDebug=0" },
+        { getItem: () => null },
+      ),
+    ).toBe(false);
+  });
+
+  it("keeps scanner debug available in production mode", () => {
     expect(
       isBarcodeScannerDebugEnabled(
         false,
         { search: "?scannerDebug=1" },
-        { getItem: () => "1" },
+        { getItem: () => null },
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("formats details without throwing", () => {

@@ -12,10 +12,7 @@ export function isBarcodeScannerDebugEnabled(
   location: Pick<Location, "search"> | null = getCurrentLocation(),
   storage: Pick<Storage, "getItem"> | null = getLocalStorage(),
 ): boolean {
-  if (!devMode) {
-    return false;
-  }
-
+  void devMode;
   const queryValue = new URLSearchParams(location?.search ?? "").get(
     SCANNER_DEBUG_QUERY_KEY,
   );
@@ -24,7 +21,13 @@ export function isBarcodeScannerDebugEnabled(
     return isEnabledValue(queryValue);
   }
 
-  return isEnabledValue(storage?.getItem(SCANNER_DEBUG_STORAGE_KEY) ?? "");
+  const storageValue = storage?.getItem(SCANNER_DEBUG_STORAGE_KEY);
+
+  if (storageValue !== null && storageValue !== undefined) {
+    return isEnabledValue(storageValue);
+  }
+
+  return true;
 }
 
 export function formatScannerDetails(details?: Record<string, unknown>): string {

@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BarcodeFormat, NotFoundException } from "@zxing/library";
 import { useState } from "react";
@@ -124,7 +124,7 @@ describe("BarcodeForm", () => {
       expect(barcodeScannerMock.decodeFromCanvas).toHaveBeenCalled();
     });
 
-    expect(screen.queryByLabelText("バーコードスキャナーログ")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("バーコードスキャナーログ")).toBeInTheDocument();
 
     expect(screen.getByText("読み取り成功: 4901234567894")).toBeInTheDocument();
 
@@ -159,8 +159,8 @@ describe("BarcodeForm", () => {
     expect(screen.getAllByRole("button", { name: "カメラを閉じる" }).length).toBeGreaterThan(0);
   });
 
-  it("shows scanner debug logs when explicitly enabled", async () => {
-    globalThis.localStorage.setItem("barcodeScannerDebug", "1");
+  it("can hide scanner debug logs when explicitly disabled", async () => {
+    globalThis.localStorage.setItem("barcodeScannerDebug", "0");
     const user = userEvent.setup();
 
     render(<BarcodeFormHarness onSubmit={vi.fn()} />);
@@ -171,8 +171,7 @@ describe("BarcodeForm", () => {
       expect(barcodeScannerMock.decodeFromCanvas).toHaveBeenCalled();
     });
 
-    const logPanel = screen.getByLabelText("バーコードスキャナーログ");
-    expect(within(logPanel).getByText("scan-start")).toBeInTheDocument();
+    expect(screen.queryByLabelText("バーコードスキャナーログ")).not.toBeInTheDocument();
   });
 
   it("can start with the camera scanner and keep manual entry hidden", async () => {
