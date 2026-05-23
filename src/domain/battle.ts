@@ -7,7 +7,8 @@ export type { BattleCommand, BattleSide, BattleState, Combatant } from "./battle
 export type RandomSource = () => number;
 
 export const DAMAGE_BALANCE = {
-  defenseDivider: 2,
+  defenseDivider: 3,
+  minDamage: 2,
   chargeMultiplier: 1.6,
   specialMultiplier: 1.9,
   guardMultiplier: 0.4,
@@ -134,7 +135,7 @@ export function calculateDamage(
   random: RandomSource,
 ): number {
   const baseDamage = Math.max(
-    1,
+    DAMAGE_BALANCE.minDamage,
     actor.character.stats.power -
       Math.floor(target.character.stats.defense / DAMAGE_BALANCE.defenseDivider),
   );
@@ -150,7 +151,7 @@ export function calculateDamage(
     DAMAGE_BALANCE.minVariance + random() * DAMAGE_BALANCE.varianceWidth;
 
   return Math.max(
-    1,
+    DAMAGE_BALANCE.minDamage,
     Math.floor(
       baseDamage * chargeMultiplier * specialMultiplier * guardMultiplier * variance,
     ),

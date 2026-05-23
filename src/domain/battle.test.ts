@@ -38,7 +38,7 @@ describe("executeTurn", () => {
     expect(state.enemy.currentHp).toBeLessThan(100);
   });
 
-  it("keeps damage at least 1", () => {
+  it("keeps damage at least 2 for low power against high defense", () => {
     const weakPlayer = createTestCharacter("weak", {
       hp: 100,
       power: 10,
@@ -58,7 +58,7 @@ describe("executeTurn", () => {
       "guard",
     );
 
-    expect(state.enemy.currentHp).toBe(99);
+    expect(state.enemy.currentHp).toBe(98);
   });
 
   it("makes the next attack stronger after charge", () => {
@@ -150,8 +150,32 @@ describe("calculateDamage", () => {
       fixedRandom(1),
     );
 
-    expect(minDamage).toBe(21);
-    expect(maxDamage).toBe(28);
+    expect(minDamage).toBe(22);
+    expect(maxDamage).toBe(31);
+  });
+
+  it("keeps low power versus high defense from stalling completely", () => {
+    const weakAttacker = createTestCharacter("weak", {
+      hp: 140,
+      power: 15,
+      defense: 35,
+      speed: 10,
+    });
+    const defensiveTarget = createTestCharacter("defensive", {
+      hp: 140,
+      power: 15,
+      defense: 35,
+      speed: 10,
+    });
+
+    expect(
+      calculateDamage(
+        createCombatant(weakAttacker),
+        createCombatant(defensiveTarget),
+        "attack",
+        fixedRandom(0.5),
+      ),
+    ).toBe(4);
   });
 
   it("keeps charge stronger than normal attack", () => {
